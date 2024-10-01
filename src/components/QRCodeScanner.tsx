@@ -17,6 +17,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan }) => {
 
     const handleScan: OnResultFunction = (data) => {
         if (data) {
+            console.log("🚀 ~ data:", data)
             onScan(data.getText());
             setIsScannerOpen(false);
         }
