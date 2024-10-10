@@ -12,36 +12,23 @@ import { getBoardingPassData } from "@/lib/boardingPassApi";
 import QRCodeScanner from "./QRCodeScanner";
 import { ToastAction } from "@radix-ui/react-toast";
 import Link from "next/link";
-<<<<<<< HEAD
 import { coinbasesdk } from "@/config/configs";
 import { useAccount } from "wagmi";
-=======
 import Image from "next/image";
->>>>>>> 9e042d5c7472c146a5e2c143cd4260cc9499e97f
 // import { addProof, addTrip } from '../lib/contractInteraction'
 // import { generateZKProof, verifyZKProof } from '../lib/zkProofs'
 
 export default function BoardingPassScanner() {
-<<<<<<< HEAD
-=======
   const [isScannerOpen, setIsScannerOpen] = useState(false);
->>>>>>> 9e042d5c7472c146a5e2c143cd4260cc9499e97f
   const [scannedData, setScannedData] = useState<string>(
     `M1ASKREN/TEST         EA272SL ORDNRTUA 0881 007F002K0303 15C>3180 M6007BUA              2901624760758980 UA UA EY975897            *30600    09  UAG    ^160MEUCIQC1k/QcCEoSFjSivLo3RWiD3268l+OLdrFMTbTyMLRSbAIgb4JVCsWKx/h5HP7+sApYU6nwvM/70IKyUrX28SC+b94=`
   );
   const { toast } = useToast();
-<<<<<<< HEAD
-  useEffect(() => {
-    contractInteraction.connect();
-  }, []);
   const { address: userAddress } = useAccount();
-=======
-
   useEffect(() => {
     contractInteraction.connect();
   }, []);
 
->>>>>>> 9e042d5c7472c146a5e2c143cd4260cc9499e97f
   const handleScan = async () => {
     if (!scannedData) {
       toast({
@@ -74,7 +61,6 @@ export default function BoardingPassScanner() {
         ethers.utils.toUtf8Bytes(JSON.stringify(publicSignals))
       );
 
-<<<<<<< HEAD
       // const provider = new ethers.providers.Web3Provider((window as any).ethereum)
       //   const provider = coinbasesdk.makeWeb3Provider();
       //   const signer = provider.request({ method: "getSigner" });
@@ -82,37 +68,19 @@ export default function BoardingPassScanner() {
 
       const isUserRegistered = await contractInteraction.isUserRegistered(
         userAddress as any
-=======
-      const provider = new ethers.providers.Web3Provider(
-        (window as any).ethereum
-      );
-      const signer = provider.getSigner();
-      const userAddress = await signer.getAddress();
-
-      const isUserRegistered = await contractInteraction.isUserRegistered(
-        userAddress
->>>>>>> 9e042d5c7472c146a5e2c143cd4260cc9499e97f
       );
 
       if (!isUserRegistered) {
         await contractInteraction.addProof(
           // signer,
-<<<<<<< HEAD
           userAddress as any,
-=======
-          userAddress,
->>>>>>> 9e042d5c7472c146a5e2c143cd4260cc9499e97f
           proofHash,
           signalHash
         );
       }
 
       const hash = await contractInteraction.addTrip(
-<<<<<<< HEAD
         userAddress as any,
-=======
-        userAddress,
->>>>>>> 9e042d5c7472c146a5e2c143cd4260cc9499e97f
         Date.now(),
         Date.now() + 3600000,
         100,
@@ -146,23 +114,6 @@ export default function BoardingPassScanner() {
   };
 
   return (
-<<<<<<< HEAD
-    <div className="space-y-4 mt-4">
-      <div className="space-y-2">
-        <Label htmlFor="boardingPass">Boarding Pass Data</Label>
-        <QRCodeScanner onScan={setScannedData} />
-        <Input
-          id="boardingPass"
-          placeholder="Enter boarding pass data"
-          value={scannedData}
-          onChange={(e) => setScannedData(e.target.value)}
-        />
-      </div>
-      <Button onClick={handleScan}>Process Boarding Pass</Button>
-    </div>
-  );
-}
-=======
     <main className="mx-auto font-sans">
       {isScannerOpen ? (
         <QRCodeScanner
@@ -315,4 +266,3 @@ const FlightCard: React.FC<FlightCardProps> = ({
     </div>
   </div>
 );
->>>>>>> 9e042d5c7472c146a5e2c143cd4260cc9499e97f
