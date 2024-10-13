@@ -139,6 +139,7 @@ export default function BoardingPassScanner() {
         });
         setIsLoading(false);
         setIsScannerOpen(false);
+        setScannedData("")
       } else if (lifeCycleRes.statusName === "error") {
         toast({
           title: "Error",
