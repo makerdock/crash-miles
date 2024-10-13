@@ -13,12 +13,12 @@ export const env = createEnv({
   /**
    * Specify your client-side environment variables schema here. This way you can ensure the app
    * isn't built with invalid env vars. To expose them to the client, prefix them with
-   * `NEXT_PUBLIC_`.
+   * ``.
    */
   client: {
-    NEXT_PUBLIC_WC_PROJECT_ID: z.string(),
-    NEXT_PUBLIC_CDP_API_KEY: z.string(),
-    NEXT_PUBLIC_RAPID_API_KEY: z.string()
+    WC_PROJECT_ID: z.string(),
+    CDP_API_KEY: z.string(),
+    RAPID_API_KEY: z.string()
   },
 
   /**
@@ -27,9 +27,9 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_RAPID_API_KEY: process.env.NEXT_PUBLIC_RAPID_API_KEY,
-    NEXT_PUBLIC_WC_PROJECT_ID: process.env.NEXT_PUBLIC_WC_PROJECT_ID,
-    NEXT_PUBLIC_CDP_API_KEY: process.env.NEXT_PUBLIC_CDP_API_KEY,
+    RAPID_API_KEY: process.env.RAPID_API_KEY,
+    WC_PROJECT_ID: process.env.WC_PROJECT_ID,
+    CDP_API_KEY: process.env.CDP_API_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
