@@ -3,7 +3,7 @@
 import { ethers } from 'ethers';
 
 // Define types for the API response
-interface BoardingPassResponse {
+export interface BoardingPassResponse {
     data: {
         passengerName: string;
         passengerFirstName: string;
@@ -47,7 +47,7 @@ export async function getBoardingPassData(boardingPassCode: string): Promise<Boa
     const options = {
         method: 'POST',
         headers: {
-            'x-rapidapi-key': '41e2a174bdmsh69ce402a3441d73p1acb1ejsna3eaa2c1721f',
+            'x-rapidapi-key': process.env.NEXT_PUBLIC_RAPID_API_KEY!,
             'x-rapidapi-host': 'boarding-pass-tools.p.rapidapi.com',
             'Content-Type': 'application/json'
         },

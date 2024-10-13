@@ -1,21 +1,47 @@
-// app/components/QRCodeScanner.tsx
-
-import React, { useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-
-// Dynamically import QrReader to avoid SSR issues
-// const QrReader = dynamic(() => import(''), { ssr: false });
 import { QrReader, OnResultFunction } from "react-qr-reader";
 import Image from "next/image";
+import {
+  LifecycleStatus,
+  Transaction,
+  TransactionButton,
+} from "@coinbase/onchainkit/transaction";
+import { baseSepolia } from "viem/chains";
+import { getAddProofContract, getAddTripContract } from "@/lib/contracts";
+import { useAccount } from "wagmi";
+import { BoardingPassResponse } from "@/lib/boardingPassApi";
 
 interface QRCodeScannerProps {
   onScan: (data: string) => void;
   onClose: () => void;
+  handleAddTrip: (boardingPassData: BoardingPassResponse) => Promise<void>;
+  proofHash: string;
+  signalHash: string;
+  handleAddProof: (status: LifecycleStatus) => void;
+  isLoading: boolean;
+  isUserRegistered: boolean;
+  getPassData: () => Promise<BoardingPassResponse | undefined>;
 }
 
-const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, onClose }) => {
+const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
+  onScan,
+  onClose,
+  handleAddProof,
+  isUserRegistered,
+  proofHash,
+  signalHash,
+  handleAddTrip,
+  isLoading,
+  getPassData,
+}) => {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const { address } = useAccount();
+  const [boardingPassData, setBoardingPassData] = useState<
+    BoardingPassResponse | undefined
+  >();
+  const [addTripContracts, setAddTripContracts] = useState<any>(null);
 
   const handleScan: OnResultFunction = (data) => {
     if (data) {
@@ -25,9 +51,42 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, onClose }) => {
     }
   };
 
-  const handleError = (err: any) => {
-    console.error(err);
-  };
+  const isVerified = proofHash && signalHash;
+
+  const addProofContracts = getAddProofContract({
+    userAddress: address as any,
+    proofHash,
+    signalHash,
+  });
+
+  useEffect(() => {
+    const fetchBoardingPassData = async () => {
+      const data = await getPassData();
+      setBoardingPassData(data);
+    };
+
+    fetchBoardingPassData();
+  }, []);
+
+  useEffect(() => {
+    const setupAddTripContracts = async () => {
+      if (boardingPassData) {
+        const contracts = getAddTripContract({
+          arrivalAirport: boardingPassData.data.legs[0].arrivalAirport ?? "",
+          departureAirport:
+            boardingPassData.data.legs[0].departureAirport ?? "",
+          endTime: new Date().getTime() + 360000,
+          startTime: new Date().getTime(),
+          flightNumber: "ABC123",
+          miles: 100,
+          userAddress: address as any,
+        });
+        setAddTripContracts(contracts);
+      }
+    };
+
+    setupAddTripContracts();
+  }, [boardingPassData, address]);
 
   return (
     <div className="mx-auto  min-h-screen max-w-md w-full overflow-hidden">
@@ -48,8 +107,6 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, onClose }) => {
             </div>
 
             <QrReader
-              // delay={300}
-              // onError={handleError}
               className="h-72 w-full rounded-lg"
               onResult={handleScan}
               constraints={{ facingMode: "user" }}
@@ -71,8 +128,34 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, onClose }) => {
         <div className="bg-dark-gray w-full p-4 text-center mt-auto ">
           <button className="flex items-center justify-between w-full px-10 py-6">
             <p className="text-left text-white text-3xl font-semibold">
-              Process
-              <br /> Boarding Pass
+              {isLoading ? (
+                "Loading..."
+              ) : (
+                <>
+                  {!isUserRegistered ? (
+                    <Transaction
+                      chainId={baseSepolia.id}
+                      contracts={addProofContracts}
+                      onStatus={handleAddProof}
+                    >
+                      <TransactionButton text="Add Proof" className="txn-btn" />
+                    </Transaction>
+                  ) : (
+                    addTripContracts && (
+                      <Transaction
+                        chainId={baseSepolia.id}
+                        contracts={addTripContracts}
+                        onStatus={handleAddProof}
+                      >
+                        <TransactionButton
+                          text="Add Trip"
+                          className="txn-btn"
+                        />
+                      </Transaction>
+                    )
+                  )}
+                </>
+              )}
             </p>
             <Image
               src="/svg/airplane.svg"
