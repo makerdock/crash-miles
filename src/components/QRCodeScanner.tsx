@@ -1,6 +1,4 @@
 import React, { useCallback, useState, useEffect } from "react";
-import dynamic from "next/dynamic";
-import { Button } from "@/components/ui/button";
 import { QrReader, OnResultFunction } from "react-qr-reader";
 import Image from "next/image";
 import {
@@ -12,11 +10,12 @@ import { baseSepolia } from "viem/chains";
 import { getAddProofContract, getAddTripContract } from "@/lib/contracts";
 import { useAccount } from "wagmi";
 import { BoardingPassResponse } from "@/lib/boardingPassApi";
+import { convertToValidArg } from "@/lib/utils";
 
 interface QRCodeScannerProps {
   onScan: (data: string) => void;
   onClose: () => void;
-  handleAddTrip: (boardingPassData: BoardingPassResponse) => Promise<void>;
+  handleAddTrip: (status: LifecycleStatus) => void;
   proofHash: string;
   signalHash: string;
   handleAddProof: (status: LifecycleStatus) => void;
@@ -68,18 +67,27 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     fetchBoardingPassData();
   }, []);
 
+  console.log(isUserRegistered);
+  console.log(boardingPassData);
+  console.log(addTripContracts);
+
   useEffect(() => {
     const setupAddTripContracts = async () => {
       if (boardingPassData) {
         const contracts = getAddTripContract({
-          arrivalAirport: boardingPassData.data.legs[0].arrivalAirport ?? "",
-          departureAirport:
-            boardingPassData.data.legs[0].departureAirport ?? "",
+          arrivalAirport: convertToValidArg(
+            boardingPassData.data.legs[0].arrivalAirport
+          ),
+          departureAirport: convertToValidArg(
+            boardingPassData.data.legs[0].departureAirport
+          ),
           endTime: new Date().getTime() + 360000,
           startTime: new Date().getTime(),
-          flightNumber: "ABC123",
+          flightNumber: convertToValidArg(
+            boardingPassData.data.legs[0].flightNumber
+          ),
           miles: 100,
-          userAddress: address as any,
+          userAddress: address as `0x${string}`,
         });
         setAddTripContracts(contracts);
       }
@@ -106,22 +114,36 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
               <Image src="/svg/stamp.svg" width={60} height={70} alt="Stamp" />
             </div>
 
-            <QrReader
-              className="h-72 w-full rounded-lg"
-              onResult={handleScan}
-              constraints={{ facingMode: "user" }}
-            />
-            <p className="text-dark-gray font-semibold text-2xl mt-10">
-              Make sure your pass is aligned in the window above.
-            </p>
-            <div className="bg-white rounded-[10px] px-6 py-4 mt-4">
-              <p className="text-gray/55 text-lg font-normal">Oct 2, 2024</p>
-              <p className="text-dark-gray text-2xl font-bold">
-                PASSENGER/TEST
-              </p>
-              <p className="text-dark-gray text-2xl font-normal">JFK - BER</p>
-              <p className="text-dark-gray text-lg font-bold">DL0932</p>
-            </div>
+            {!isVerified && (
+              <>
+                <QrReader
+                  className="h-72 w-full rounded-lg"
+                  onResult={handleScan}
+                  constraints={{ facingMode: "user" }}
+                />
+                <p className="text-dark-gray font-semibold text-2xl mt-10">
+                  Make sure your pass is aligned in the window above.
+                </p>
+              </>
+            )}
+            {boardingPassData && (
+              <div className="bg-white rounded-[10px] px-6 py-4 mt-4">
+                <p className="text-gray/55 text-lg font-normal">{`${new Date(
+                  boardingPassData.data.legs[0].flightDate
+                )}`}</p>
+                <p className="text-dark-gray text-2xl font-bold">
+                  {boardingPassData.data.passengerFirstName}/
+                  {boardingPassData.data.passengerFirstName}
+                </p>
+                <p className="text-dark-gray text-2xl font-normal">
+                  {boardingPassData.data.legs[0].arrivalAirport}-
+                  {boardingPassData.data.legs[0].departureAirport}
+                </p>
+                <p className="text-dark-gray text-lg font-bold">
+                  {boardingPassData.data.legs[0].flightNumber}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -140,19 +162,16 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
                     >
                       <TransactionButton text="Add Proof" className="txn-btn" />
                     </Transaction>
+                  ) : addTripContracts ? (
+                    <Transaction
+                      chainId={baseSepolia.id}
+                      contracts={addTripContracts}
+                      onStatus={handleAddProof}
+                    >
+                      <TransactionButton text="Add Trip" className="txn-btn" />
+                    </Transaction>
                   ) : (
-                    addTripContracts && (
-                      <Transaction
-                        chainId={baseSepolia.id}
-                        contracts={addTripContracts}
-                        onStatus={handleAddProof}
-                      >
-                        <TransactionButton
-                          text="Add Trip"
-                          className="txn-btn"
-                        />
-                      </Transaction>
-                    )
+                    "Error happened :( ). Try again later!"
                   )}
                 </>
               )}

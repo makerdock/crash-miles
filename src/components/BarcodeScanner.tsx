@@ -33,8 +33,8 @@ import { RxAvatar } from "react-icons/rx";
 import { useWagmiConfig } from "@/lib/wagmi";
 
 export default function BoardingPassScanner() {
-  const config = useWagmiConfig()
-  
+  const config = useWagmiConfig();
+
   const { address: userAddress } = useAccount();
   const publicClient = usePublicClient();
   const {
@@ -112,64 +112,45 @@ export default function BoardingPassScanner() {
     }
   };
 
-  const handleAddTrip = async (boardingPassData: BoardingPassResponse) => {
+  const handleAddTrip = async (lifeCycleRes: LifecycleStatus) => {
     setIsLoading(true);
     try {
-      if (!(isUserRegistered as boolean)) {
+      if (lifeCycleRes.statusName === "success") {
+        const txnReceipt = lifeCycleRes.statusData.transactionReceipts[0];
+        const txn = txnReceipt.transactionHash;
+
+        toast({
+          title: "Success",
+          description: "Trip added successfully",
+          action: (
+            <Link
+              target="_blank"
+              href={`https://sepolia.basescan.org/tx/${txn}`}
+            >
+              <ToastAction altText="Check it on etherscan">
+                <Button>Check it on Etherscan</Button>
+              </ToastAction>
+            </Link>
+          ),
+        });
+        setHashes({
+          proofHash: "",
+          signalHash: "",
+        });
         setIsLoading(false);
-        return;
+        setIsScannerOpen(false);
+      } else if (lifeCycleRes.statusName === "error") {
+        toast({
+          title: "Error",
+          description: "Failed to Add Trip.",
+          variant: "destructive",
+        });
       }
-      const departureAirport = keccak256(
-        encodePacked(
-          ["string"],
-          [boardingPassData.data.legs[0].departureAirport]
-        )
-      );
-      const arrivalAirport = keccak256(
-        encodePacked(["string"], [boardingPassData.data.legs[0].arrivalAirport])
-      );
-      const flightNumber = keccak256(
-        encodePacked(["string"], [boardingPassData.data.legs[0].flightNumber])
-      );
-
-      const txnReq = (await publicClient?.simulateContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI as Abi,
-        functionName: "addTrip",
-        args: [
-          userAddress as any,
-          BigInt(Date.now()),
-          BigInt(Date.now() + 3600000),
-          BigInt(100),
-          departureAirport,
-          arrivalAirport,
-          flightNumber,
-        ],
-      })) as any;
-
-      const txn = await writeContract(config as any, txnReq as any);
-
-      toast({
-        title: "Success",
-        description: "Trip added successfully",
-        action: (
-          <Link target="_blank" href={`https://sepolia.basescan.org/tx/${txn}`}>
-            <ToastAction altText="Check it on etherscan">
-              <Button>Check it on Etherscan</Button>
-            </ToastAction>
-          </Link>
-        ),
-      });
-      setHashes({
-        proofHash: "",
-        signalHash: "",
-      });
-      setIsLoading(false);
     } catch (error) {
       console.error("Error processing boarding pass:", error);
       toast({
         title: "Error",
-        description: "Failed to process boarding pass. Please try again.",
+        description: "Failed to Add Trip.",
         variant: "destructive",
       });
       setIsLoading(false);
