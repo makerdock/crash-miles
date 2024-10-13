@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { baseSepolia } from 'viem/chains';
 import { WagmiProvider } from 'wagmi';
-import { env } from '../../src/env';
 import { useWagmiConfig } from '@/lib/wagmi';
 
 type Props = { children: ReactNode };
@@ -18,7 +17,7 @@ function OnchainProviders({ children }: Props) {
     return (
         <WagmiProvider config={wagmiConfig}>
             <QueryClientProvider client={queryClient}>
-                <OnchainKitProvider apiKey={env.CDP_API_KEY} chain={baseSepolia as any}>
+                <OnchainKitProvider apiKey={process.env.NEXT_PUBLIC_CDP_API_KEY} chain={baseSepolia as any}>
                     <RainbowKitProvider modalSize="compact">
                         {children}
                     </RainbowKitProvider>

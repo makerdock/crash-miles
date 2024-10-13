@@ -27,7 +27,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <OnchainProviders>
-          <div className="min-h-[100dvh] flex flex-col justify-center">
+          <div className="min-h-[100dvh] flex flex-col justify-center min-w-full w-full ">
             {children}
             <Toaster />
           </div>
