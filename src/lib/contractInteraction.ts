@@ -1,18 +1,9 @@
 // app/lib/contractInteractions.ts
 
 import { ethers } from 'ethers';
+import { CONTRACT_ABI } from './contractABI';
 
-const CONTRACT_ADDRESS = '0xc1d0ff567399b16deab4ef337fc9c9ef678e4840';
-const CONTRACT_ABI = [
-    "function addProof(address user, bytes32 proofHash, bytes32 signalHash)",
-    "function addTrip(address user, uint256 startTime, uint256 endTime, uint256 miles, bytes32 departureAirport, bytes32 arrivalAirport, bytes32 flightNumber)",
-    "function getProof(address user) view returns (bytes32, bytes32, uint256)",
-    "function getTripCount(address user) view returns (uint256)",
-    "function getTrip(address user, uint256 index) view returns (uint256, uint256, uint256, bytes32, bytes32, bytes32)",
-    "function getTotalMiles(address user) view returns (uint256)",
-    "function isUserRegistered(address user) external view returns (bool)"
-
-];
+export const CONTRACT_ADDRESS = '0x77eb8C27B70087636FBeCC618b1f9298a4A6D862';
 
 class ContractInteraction {
     private contract: ethers.Contract | null = null;

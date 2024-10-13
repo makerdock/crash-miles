@@ -1,9 +1,9 @@
 // app/lib/boardingPassApi.ts
-
+'use server'
 import { ethers } from 'ethers';
 
 // Define types for the API response
-interface BoardingPassResponse {
+export interface BoardingPassResponse {
     data: {
         passengerName: string;
         passengerFirstName: string;
@@ -47,7 +47,7 @@ export async function getBoardingPassData(boardingPassCode: string): Promise<Boa
     const options = {
         method: 'POST',
         headers: {
-            'x-rapidapi-key': '41e2a174bdmsh69ce402a3441d73p1acb1ejsna3eaa2c1721f',
+            'x-rapidapi-key': process.env.RAPID_API_KEY!,
             'x-rapidapi-host': 'boarding-pass-tools.p.rapidapi.com',
             'Content-Type': 'application/json'
         },
@@ -65,27 +65,4 @@ export async function getBoardingPassData(boardingPassCode: string): Promise<Boa
         console.error('Error fetching boarding pass data:', error);
         throw error;
     }
-}
-
-export function prepareBoardingPassInput(boardingPassData: BoardingPassResponse): string {
-    const { passengerName, legs } = boardingPassData.data;
-    const { departureAirport, arrivalAirport, flightNumber, flightDate } = legs[0];
-
-    // Combine relevant data into a single string
-    const inputString = `${passengerName}|${departureAirport}|${arrivalAirport}|${flightNumber}|${flightDate}`;
-
-    // Hash the input string to create a fixed-length input for ZK proof
-    return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(inputString));
-}
-
-export function extractTripDetails(boardingPassData: BoardingPassResponse) {
-    const { legs } = boardingPassData.data;
-    const { departureAirport, arrivalAirport, flightDate, flightNumber } = legs[0];
-
-    return {
-        departureAirport,
-        arrivalAirport,
-        flightDate,
-        flightNumber
-    };
 }

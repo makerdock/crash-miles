@@ -67,3 +67,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+.txn-btn {
+  @apply !bg-transparent ;
+}
+.txn-btn span {
+  @apply !text-left !text-3xl !text-white !font-semibold ;
+}
