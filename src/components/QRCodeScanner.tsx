@@ -66,11 +66,6 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
 
     fetchBoardingPassData();
   }, []);
-
-  console.log(isUserRegistered);
-  console.log(boardingPassData);
-  console.log(addTripContracts);
-
   useEffect(() => {
     const setupAddTripContracts = async () => {
       if (boardingPassData) {
@@ -101,7 +96,11 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
       <div className="bg-[url('/images/cloud-bg.jpeg')] relative text-white min-h-screen flex flex-col max-w-md w-full overflow-hidden bg-center bg-cover">
         <div className="p-6 mt-8">
           <button
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              setBoardingPassData(undefined);
+              setAddTripContracts(null);
+            }}
             className="text-white font-semibold text-3xl text-left mb-6"
           >
             ← EXIT
