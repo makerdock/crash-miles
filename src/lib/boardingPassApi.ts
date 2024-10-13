@@ -47,7 +47,7 @@ export async function getBoardingPassData(boardingPassCode: string): Promise<Boa
     const options = {
         method: 'POST',
         headers: {
-            'x-rapidapi-key': process.env.NEXT_PUBLIC_RAPID_API_KEY!,
+            'x-rapidapi-key': process.env.RAPID_API_KEY!,
             'x-rapidapi-host': 'boarding-pass-tools.p.rapidapi.com',
             'Content-Type': 'application/json'
         },
