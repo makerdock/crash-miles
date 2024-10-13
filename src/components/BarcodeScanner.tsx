@@ -1,22 +1,57 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ethers } from "ethers";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { generateZKProof, verifyZKProof } from "@/lib/zkProofs";
-import { contractInteraction } from "@/lib/contractInteraction";
-import { getBoardingPassData } from "@/lib/boardingPassApi";
+import {
+  CONTRACT_ADDRESS,
+  contractInteraction,
+} from "@/lib/contractInteraction";
+import {
+  BoardingPassResponse,
+  getBoardingPassData,
+} from "@/lib/boardingPassApi";
 import QRCodeScanner from "./QRCodeScanner";
 import { ToastAction } from "@radix-ui/react-toast";
 import Link from "next/link";
+import { useAccount, usePublicClient, useReadContract } from "wagmi";
 import Image from "next/image";
-// import { addProof, addTrip } from '../lib/contractInteraction'
-// import { generateZKProof, verifyZKProof } from '../lib/zkProofs'
+import { CONTRACT_ABI } from "@/lib/contractABI";
+import { LifecycleStatus } from "@coinbase/onchainkit/transaction";
+import {
+  Abi,
+  encodeAbiParameters,
+  encodePacked,
+  keccak256,
+  parseAbiParameters,
+} from "viem";
+import { writeContract } from "wagmi/actions";
+import WalletConnection from "./WalletConnection";
+import { Avatar } from "@coinbase/onchainkit/identity";
+import { RxAvatar } from "react-icons/rx";
+import { useWagmiConfig } from "@/lib/wagmi";
 
 export default function BoardingPassScanner() {
+  const config = useWagmiConfig()
+  
+  const { address: userAddress } = useAccount();
+  const publicClient = usePublicClient();
+  const {
+    data: isUserRegistered,
+    refetch,
+    isLoading: isUserVerifying,
+  } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    functionName: "isUserRegistered",
+    args: [userAddress as any],
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [hashes, setHashes] = useState({
+    proofHash: "",
+    signalHash: "",
+  });
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scannedData, setScannedData] = useState<string>(
     `M1ASKREN/TEST         EA272SL ORDNRTUA 0881 007F002K0303 15C>3180 M6007BUA              2901624760758980 UA UA EY975897            *30600    09  UAG    ^160MEUCIQC1k/QcCEoSFjSivLo3RWiD3268l+OLdrFMTbTyMLRSbAIgb4JVCsWKx/h5HP7+sApYU6nwvM/70IKyUrX28SC+b94=`
@@ -27,7 +62,7 @@ export default function BoardingPassScanner() {
     contractInteraction.connect();
   }, []);
 
-  const handleScan = async () => {
+  const generateProofs = async () => {
     if (!scannedData) {
       toast({
         title: "Empty Input",
@@ -36,7 +71,7 @@ export default function BoardingPassScanner() {
       });
       return;
     }
-
+    setIsLoading(true);
     try {
       const boardingPassData = await getBoardingPassData(scannedData);
       const { proof, publicSignals } = await generateZKProof(
@@ -59,49 +94,9 @@ export default function BoardingPassScanner() {
         ethers.utils.toUtf8Bytes(JSON.stringify(publicSignals))
       );
 
-      const provider = new ethers.providers.Web3Provider(
-        (window as any).ethereum
-      );
-      const signer = provider.getSigner();
-      const userAddress = await signer.getAddress();
-
-      const isUserRegistered = await contractInteraction.isUserRegistered(
-        userAddress
-      );
-
-      if (!isUserRegistered) {
-        await contractInteraction.addProof(
-          // signer,
-          userAddress,
-          proofHash,
-          signalHash
-        );
-      }
-
-      const hash = await contractInteraction.addTrip(
-        userAddress,
-        Date.now(),
-        Date.now() + 3600000,
-        100,
-        boardingPassData.data.legs[0].departureAirport,
-        boardingPassData.data.legs[0].arrivalAirport,
-        "ABC123"
-      );
-
-      toast({
-        title: "Success",
-        description: "Trip added successfully",
-        action: (
-          <Link
-            target="_blank"
-            href={`https://sepolia.basescan.org/tx/${hash}`}
-          >
-            <ToastAction altText="Check it on etherscan">
-              <Button>Check it on Etherscan</Button>
-            </ToastAction>
-          </Link>
-        ),
-      });
+      setHashes((prev) => ({ ...prev, proofHash, signalHash }));
+      setIsLoading(false);
+      return boardingPassData;
     } catch (error) {
       console.error("Error processing boarding pass:", error);
       toast({
@@ -109,29 +104,126 @@ export default function BoardingPassScanner() {
         description: "Failed to process boarding pass. Please try again.",
         variant: "destructive",
       });
+      setHashes({
+        proofHash: "",
+        signalHash: "",
+      });
+      setIsLoading(false);
     }
   };
+
+  const handleAddTrip = async (boardingPassData: BoardingPassResponse) => {
+    setIsLoading(true);
+    try {
+      if (!(isUserRegistered as boolean)) {
+        setIsLoading(false);
+        return;
+      }
+      const departureAirport = keccak256(
+        encodePacked(
+          ["string"],
+          [boardingPassData.data.legs[0].departureAirport]
+        )
+      );
+      const arrivalAirport = keccak256(
+        encodePacked(["string"], [boardingPassData.data.legs[0].arrivalAirport])
+      );
+      const flightNumber = keccak256(
+        encodePacked(["string"], [boardingPassData.data.legs[0].flightNumber])
+      );
+
+      const txnReq = (await publicClient?.simulateContract({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI as Abi,
+        functionName: "addTrip",
+        args: [
+          userAddress as any,
+          BigInt(Date.now()),
+          BigInt(Date.now() + 3600000),
+          BigInt(100),
+          departureAirport,
+          arrivalAirport,
+          flightNumber,
+        ],
+      })) as any;
+
+      const txn = await writeContract(config as any, txnReq as any);
+
+      toast({
+        title: "Success",
+        description: "Trip added successfully",
+        action: (
+          <Link target="_blank" href={`https://sepolia.basescan.org/tx/${txn}`}>
+            <ToastAction altText="Check it on etherscan">
+              <Button>Check it on Etherscan</Button>
+            </ToastAction>
+          </Link>
+        ),
+      });
+      setHashes({
+        proofHash: "",
+        signalHash: "",
+      });
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error processing boarding pass:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process boarding pass. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const walletFormat = (address: string, chars = 4) => {
+    return `${address.slice(0, chars)}...${address.slice(-chars)}`;
+  };
+
+  const handleAddProof = useCallback((status: LifecycleStatus) => {
+    console.log("LifecycleStatus", status);
+    if (status.statusName === "success") {
+      toast({ title: "Proof added successfully ✅" });
+      refetch();
+    }
+  }, []);
 
   return (
     <main className="mx-auto font-sans">
       {isScannerOpen ? (
         <QRCodeScanner
+          getPassData={generateProofs}
+          isLoading={isLoading}
+          handleAddProof={handleAddProof}
+          isUserRegistered={isUserRegistered as boolean}
+          handleAddTrip={handleAddTrip}
           onScan={setScannedData}
           onClose={() => setIsScannerOpen(false)}
+          proofHash={hashes.proofHash}
+          signalHash={hashes.signalHash}
         />
       ) : (
         <div className="bg-light-gray text-white min-h-screen max-w-md w-full overflow-hidden mx-auto">
           <div className="bg-dark-blue">
             <div className="bg-primary-blue rounded-br-[100px] overflow-hidden pt-16 px-7 pb-14">
               <div className="flex items-center mb-7 ">
-                <div className="w-12 h-12 bg-white rounded-full mr-3"></div>
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mr-3">
+                  <Avatar
+                    address={userAddress}
+                    defaultComponent={
+                      <RxAvatar className="text-blue-600 h-10 w-10 mx-auto my-auto" />
+                    }
+                    className="h-10 w-10 text-blue-600"
+                  />
+                </div>
                 <div>
-                  <div className=" text-white text-[22px] font-semibold">
+                  {/* <div className=" text-white text-[22px] font-semibold">
                     passenger.eth
                   </div>
                   <div className="text-white text-[22px] font-semibold">
-                    0x325f...5f88
-                  </div>
+                    {userAddress && walletFormat(userAddress)}
+                  </div> */}
+                  <WalletConnection />
                 </div>
               </div>
               <div className="flex justify-between items-center ">

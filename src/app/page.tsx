@@ -1,19 +1,20 @@
 "use client";
 
 import BoardingPassScanner from "@/components/BarcodeScanner";
+import ConnectWalletPopup from "@/components/ConnectWalletPopup";
 import AwaitingConnection from "@/components/ui/AwaitingConnection";
 import WalletConnection from "@/components/WalletConnection";
 
 import Image from "next/image";
 import { useState } from "react";
+import { useAccount } from "wagmi";
 
 export default function Home() {
-  const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const { address, isConnecting } = useAccount();
 
   return (
     <main className="mx-auto">
-      {isConnected ? (
+      {address ? (
         <BoardingPassScanner />
       ) : isConnecting ? (
         <AwaitingConnection />
@@ -67,13 +68,7 @@ export default function Home() {
             </p>
           </div>
           <div className="bg-dark-gray w-full p-4 pb-2 text-center ">
-            <WalletConnection
-              onConnecting={() => setIsConnecting(true)}
-              onConnected={() => {
-                setIsConnecting(false);
-                setIsConnected(true);
-              }}
-            />
+            <WalletConnection />
             <p className="text-lg text-white whitespace-nowrap font-mono font-medium">
               CASH IN, $CRASH OUT. 747 AIRLINES DESTINATIONS. YOU DON&apos;T
               KNOW WHERE YOU&apos;RE GOING, BUT WE DO. CASH IN, $CRASH OUT. 747

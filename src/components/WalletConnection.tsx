@@ -3,71 +3,105 @@
 import { useState } from "react";
 import { ethers } from "ethers";
 import { useToast } from "@/components/ui/use-toast";
-import Image from "next/image";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
+import {
+  ConnectWallet,
+  Wallet,
+  WalletDropdown,
+  WalletDropdownBasename,
+  WalletDropdownDisconnect,
+  WalletDropdownFundLink,
+  WalletDropdownLink,
+} from "@coinbase/onchainkit/wallet";
+import {
+  Address,
+  Avatar,
+  EthBalance,
+  Identity,
+  Name,
+} from "@coinbase/onchainkit/identity";
+import useWalletPopupStore from "@/stores/useWalletPopupStore";
 
-interface Props {
-  onConnecting: () => void;
-  onConnected: () => void;
-}
+export default function WalletConnection() {
+  // const [address, setAddress] = useState<string | null>(null);
+  const { address } = useAccount();
+  const { setOpen: setWalletPopup } = useWalletPopupStore();
 
-export default function WalletConnection({ onConnecting, onConnected }: Props) {
-  const [address, setAddress] = useState<string | null>(null);
-  const { toast } = useToast();
+  const { connect, connectors } = useConnect();
 
-  const connectWallet = async () => {
-    if (typeof (window as any).ethereum !== "undefined") {
-      try {
-        onConnecting();
-        await (window as any).ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        const provider = new ethers.providers.Web3Provider(
-          (window as any).ethereum
-        );
-        const signer = provider.getSigner();
-        const address = await signer.getAddress();
-        setAddress(address);
-        onConnected();
-        toast({
-          title: "Wallet Connected",
-          description: `Connected to ${address}`,
-        });
-      } catch (err) {
-        console.error("Failed to connect wallet:", err);
-        toast({
-          title: "Connection Failed",
-          description: "Failed to connect wallet. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      toast({
-        title: "MetaMask Required",
-        description: "Please install MetaMask to use this app.",
-        variant: "destructive",
-      });
+  function connectToSmartWallet() {
+    const coinbaseWalletConnector = connectors.find(
+      (connector) => connector.id === "coinbaseWalletSDK"
+    );
+
+    if (coinbaseWalletConnector) {
+      connect({ connector: coinbaseWalletConnector });
     }
   };
 
   return (
     <div>
-      {address ? (
+      {/* {address ? (
         <p className="text-sm text-muted-foreground">Connected: {address}</p>
       ) : (
+        <>
+          <button
+            onClick={connectToSmartWallet}
+            className="flex items-center justify-between w-full px-10 py-6 font-sans"
+          >
+            <p className="text-left text-2xl font-semibold">
+              Connect Wallet
+              <br /> to begin
+            </p>
+            <Image
+              src="/svg/airplane.svg"
+              width={88}
+              height={88}
+              alt="airplane icon"
+            />
+          </button>
+        </>
+      )} */}
+      {address && (
+        <Wallet>
+          <ConnectWallet
+            withWalletAggregator={true}
+            // className={class/Name}
+            className="uppercase font-bold p-2 bg-transparent hover:!bg-transparent hover:!underline flex items-center "
+          >
+          
+            <Name className="text-white text-xl" />
+          </ConnectWallet>
+          <WalletDropdown className="bg-white z-10 border-2 border-blue-600 rounded-none">
+            <Identity
+              className="px-4 pt-3 pb-2 bg-white"
+              hasCopyAddressOnClick={true}
+            >
+              <Avatar />
+              <Name />
+              <Address />
+              <EthBalance />
+            </Identity>
+            <WalletDropdownBasename className="bg-white" />
+            <WalletDropdownLink
+              className="bg-white"
+              icon="wallet"
+              href="https://wallet.coinbase.com"
+            >
+              Go to Wallet Dashboard
+            </WalletDropdownLink>
+            {/* <WalletDropdownFundLink className="bg-white" /> */}
+            <WalletDropdownDisconnect className="bg-white" />
+          </WalletDropdown>
+        </Wallet>
+      )}
+
+      {!address && (
         <button
-          className="flex items-center justify-between w-full px-10 py-6 font-sans"
-          onClick={connectWallet}
+          className="uppercase font-bold"
+          onClick={() => setWalletPopup(true)}
         >
-          <p className="text-left text-2xl font-semibold">
-            Connect Wallet
-            <br /> to begin
-          </p>
-          <Image
-            src="/svg/airplane.svg"
-            width={88}
-            height={88}
-            alt="airplane icon"
-          />
+          Connect Wallet
         </button>
       )}
     </div>

@@ -4,6 +4,11 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import ConnectWalletPopup from "@/components/ConnectWalletPopup";
+import OnchainProviders from "./providers";
+import '@rainbow-me/rainbowkit/styles.css';
+import "@rainbow-me/rainbowkit/styles.css";
+import '@coinbase/onchainkit/styles.css';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,8 +26,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
-        {children}
-        <Toaster />
+        <OnchainProviders>
+          <div className="min-h-[100dvh] flex flex-col justify-center">
+            {children}
+            <Toaster />
+          </div>
+          <ConnectWalletPopup />
+        </OnchainProviders>
       </body>
     </html>
   );
