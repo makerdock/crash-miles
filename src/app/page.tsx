@@ -1,16 +1,14 @@
 "use client";
 
 import BoardingPassScanner from "@/components/BarcodeScanner";
-import ConnectWalletPopup from "@/components/ConnectWalletPopup";
 import AwaitingConnection from "@/components/ui/AwaitingConnection";
 import WalletConnection from "@/components/WalletConnection";
 
 import Image from "next/image";
-import { useState } from "react";
 import { useAccount } from "wagmi";
 
 export default function Home() {
-  const { address, isConnecting } = useAccount();
+  const { address, isConnecting, isReconnecting } = useAccount();
 
   return (
     <main className="mx-auto">
