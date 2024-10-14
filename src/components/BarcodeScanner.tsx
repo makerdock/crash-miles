@@ -63,6 +63,7 @@ export default function BoardingPassScanner() {
       });
       return;
     }
+    if (boardingPassData || (hashes.proofHash && hashes.signalHash)) return;
     setIsLoading(true);
     try {
       const boardingPassData = await getBoardingPassData(scannedData);
@@ -101,10 +102,13 @@ export default function BoardingPassScanner() {
         signalHash: "",
       });
       setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleAddTrip = async (lifeCycleRes: LifecycleStatus) => {
+    if (txnHash) return;
     setIsLoading(true);
     try {
       if (lifeCycleRes.statusName === "success") {
@@ -129,9 +133,10 @@ export default function BoardingPassScanner() {
       } else if (lifeCycleRes.statusName === "error") {
         toast({
           title: "Error",
-          description: "Failed to Add Trip.",
+          description: lifeCycleRes.statusData.message,
           variant: "destructive",
         });
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error processing boarding pass:", error);
@@ -141,17 +146,20 @@ export default function BoardingPassScanner() {
         variant: "destructive",
       });
       setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleAddProof = useCallback((status: LifecycleStatus) => {
+    if (isUserRegistered) return;
     if (status.statusName === "success") {
       toast({ title: "Proof added successfully ✅" });
       refetch();
     } else if (status.statusName === "error") {
       toast({
         title: "Error",
-        description: "Failed to Add Proof.",
+        description: "Failed to Add Proof." + status.statusData.message,
         variant: "destructive",
       });
     }
@@ -166,6 +174,7 @@ export default function BoardingPassScanner() {
     });
     setBoardingPassData(undefined);
     setTxnHash("");
+    setIsLoading(false);
   };
 
   // generating proof hashes everytime a boarding pass is scanned
@@ -174,8 +183,10 @@ export default function BoardingPassScanner() {
       scannedData &&
       !boardingPassData &&
       !hashes.proofHash &&
-      !hashes.signalHash
+      !hashes.signalHash &&
+      !isLoading
     ) {
+
       handleVerification();
     }
   }, [scannedData]);
@@ -184,6 +195,7 @@ export default function BoardingPassScanner() {
   const handleReset = () => {
     setBoardingPassData(undefined);
     setScannedData("");
+    setIsLoading(false);
   };
 
   return (

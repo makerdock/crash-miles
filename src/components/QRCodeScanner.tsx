@@ -86,10 +86,11 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
         setAddTripContracts(contracts);
       }
     };
-    if (!addTripContracts) {
+    if (!addTripContracts && boardingPassData) {
       setupAddTripContracts();
     }
   }, [boardingPassData, address]);
+
 
   return (
     <div className="mx-auto  min-h-screen max-w-md w-full overflow-hidden">
@@ -175,6 +176,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
               <>
                 {!isUserRegistered ? (
                   <Transaction
+                    onError={(error) => console.log(error.message)}
                     chainId={baseSepolia.id}
                     contracts={addProofContracts}
                     onStatus={handleAddProof}
@@ -185,8 +187,9 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
                       className="txn-btn disabled:cursor-not-allowed"
                     />
                   </Transaction>
-                ) : addTripContracts ? (
+                ) : addTripContracts && boardingPassData ? (
                   <Transaction
+                    onError={handleReset}
                     chainId={baseSepolia.id}
                     contracts={addTripContracts}
                     onStatus={handleAddTrip}
