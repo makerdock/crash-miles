@@ -19,29 +19,14 @@ import { useAccount, usePublicClient, useReadContract } from "wagmi";
 import Image from "next/image";
 import { CONTRACT_ABI } from "@/lib/contractABI";
 import { LifecycleStatus } from "@coinbase/onchainkit/transaction";
-import {
-  Abi,
-  encodeAbiParameters,
-  encodePacked,
-  keccak256,
-  parseAbiParameters,
-} from "viem";
-import { writeContract } from "wagmi/actions";
 import WalletConnection from "./WalletConnection";
 import { Avatar } from "@coinbase/onchainkit/identity";
 import { RxAvatar } from "react-icons/rx";
 import { useWagmiConfig } from "@/lib/wagmi";
 
 export default function BoardingPassScanner() {
-  const config = useWagmiConfig();
-
   const { address: userAddress } = useAccount();
-  const publicClient = usePublicClient();
-  const {
-    data: isUserRegistered,
-    refetch,
-    isLoading: isUserVerifying,
-  } = useReadContract({
+  const { data: isUserRegistered, refetch } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: "isUserRegistered",
@@ -53,27 +38,36 @@ export default function BoardingPassScanner() {
     signalHash: "",
   });
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [scannedData, setScannedData] = useState<string>(
-    `M1ASKREN/TEST         EA272SL ORDNRTUA 0881 007F002K0303 15C>3180 M6007BUA              2901624760758980 UA UA EY975897            *30600    09  UAG    ^160MEUCIQC1k/QcCEoSFjSivLo3RWiD3268l+OLdrFMTbTyMLRSbAIgb4JVCsWKx/h5HP7+sApYU6nwvM/70IKyUrX28SC+b94=`
-  );
+  const [boardingPassData, setBoardingPassData] = useState<
+    BoardingPassResponse | undefined
+  >();
+  const [scannedData, setScannedData] = useState<string>("");
+  const [txnHash, setTxnHash] = useState<string>("");
+
+  // `M1ASKREN/TEST         EA272SL ORDNRTUA 0881 007F002K0303 15C>3180 M6007BUA              2901624760758980 UA UA EY975897            *30600    09  UAG    ^160MEUCIQC1k/QcCEoSFjSivLo3RWiD3268l+OLdrFMTbTyMLRSbAIgb4JVCsWKx/h5HP7+sApYU6nwvM/70IKyUrX28SC+b94=`
   const { toast } = useToast();
 
-  useEffect(() => {
-    contractInteraction.connect();
-  }, []);
+  // useEffect(() => {
+  //   contractInteraction.connect();
+  // }, []);
 
-  const generateProofs = async () => {
+  // gets the boarding pass data and verify it and returns proof hashes
+  const handleVerification = async () => {
+    console.log("calling generate proofs");
+
     if (!scannedData) {
       toast({
-        title: "Empty Input",
-        description: "Please enter boarding pass data.",
+        title: "Boarding pass not scanned",
+        description: "Please scan the boarding pass correctly.",
         variant: "destructive",
       });
       return;
     }
+    if (boardingPassData || (hashes.proofHash && hashes.signalHash)) return;
     setIsLoading(true);
     try {
       const boardingPassData = await getBoardingPassData(scannedData);
+      setBoardingPassData(boardingPassData);
       const { proof, publicSignals } = await generateZKProof(
         boardingPassData.data.passengerName
       );
@@ -96,7 +90,6 @@ export default function BoardingPassScanner() {
 
       setHashes((prev) => ({ ...prev, proofHash, signalHash }));
       setIsLoading(false);
-      return boardingPassData;
     } catch (error) {
       console.error("Error processing boarding pass:", error);
       toast({
@@ -109,16 +102,19 @@ export default function BoardingPassScanner() {
         signalHash: "",
       });
       setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleAddTrip = async (lifeCycleRes: LifecycleStatus) => {
+    if (txnHash) return;
     setIsLoading(true);
     try {
       if (lifeCycleRes.statusName === "success") {
         const txnReceipt = lifeCycleRes.statusData.transactionReceipts[0];
         const txn = txnReceipt.transactionHash;
-
+        setTxnHash(txn);
         toast({
           title: "Success",
           description: "Trip added successfully",
@@ -133,19 +129,14 @@ export default function BoardingPassScanner() {
             </Link>
           ),
         });
-        setHashes({
-          proofHash: "",
-          signalHash: "",
-        });
         setIsLoading(false);
-        setIsScannerOpen(false);
-        setScannedData("")
       } else if (lifeCycleRes.statusName === "error") {
         toast({
           title: "Error",
-          description: "Failed to Add Trip.",
+          description: lifeCycleRes.statusData.message,
           variant: "destructive",
         });
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error processing boarding pass:", error);
@@ -155,32 +146,71 @@ export default function BoardingPassScanner() {
         variant: "destructive",
       });
       setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const walletFormat = (address: string, chars = 4) => {
-    return `${address.slice(0, chars)}...${address.slice(-chars)}`;
   };
 
   const handleAddProof = useCallback((status: LifecycleStatus) => {
-    console.log("LifecycleStatus", status);
+    if (isUserRegistered) return;
     if (status.statusName === "success") {
       toast({ title: "Proof added successfully ✅" });
       refetch();
+    } else if (status.statusName === "error") {
+      toast({
+        title: "Error",
+        description: "Failed to Add Proof." + status.statusData.message,
+        variant: "destructive",
+      });
     }
   }, []);
 
+  const handleClose = () => {
+    setIsScannerOpen(false);
+    setScannedData("");
+    setHashes({
+      proofHash: "",
+      signalHash: "",
+    });
+    setBoardingPassData(undefined);
+    setTxnHash("");
+    setIsLoading(false);
+  };
+
+  // generating proof hashes everytime a boarding pass is scanned
+  useEffect(() => {
+    if (
+      scannedData &&
+      !boardingPassData &&
+      !hashes.proofHash &&
+      !hashes.signalHash &&
+      !isLoading
+    ) {
+
+      handleVerification();
+    }
+  }, [scannedData]);
+
+  // resetting the scanned pass to default
+  const handleReset = () => {
+    setBoardingPassData(undefined);
+    setScannedData("");
+    setIsLoading(false);
+  };
+
   return (
-    <main className="mx-auto font-sans">
+    <main className="mx-auto w-full font-sans">
       {isScannerOpen ? (
         <QRCodeScanner
-          getPassData={generateProofs}
+          txnHash={txnHash}
+          handleReset={handleReset}
+          boardingPassData={boardingPassData}
           isLoading={isLoading}
           handleAddProof={handleAddProof}
           isUserRegistered={isUserRegistered as boolean}
           handleAddTrip={handleAddTrip}
           onScan={setScannedData}
-          onClose={() => setIsScannerOpen(false)}
+          onClose={handleClose}
           proofHash={hashes.proofHash}
           signalHash={hashes.signalHash}
         />
@@ -208,12 +238,12 @@ export default function BoardingPassScanner() {
                   <WalletConnection />
                 </div>
               </div>
-              <div className="flex justify-between items-center ">
-                <div className=" text-white text-[40px] italic font-[900]">
+              <div className="flex justify-between items-start flex-col gap- ">
+                <div className=" text-white text-xl md:text-[40px] italic font-[900]">
                   HIGHMILES <br />
                   EARNED
                 </div>
-                <div className="text-white text-[95px] italic font-[900]">
+                <div className="text-white text-[60px] md:text-[95px] italic font-[900]">
                   31,683
                 </div>
               </div>
@@ -221,20 +251,20 @@ export default function BoardingPassScanner() {
           </div>
           <div className="bg-dark-blue flex justify-between items-start rounded-br-[100px] overflow-hidden relative p-7">
             <div className="flex flex-col">
-              <p className="text-white text-lg font-bold">
+              <p className="text-white text-sm md:text-lg font-bold">
                 MILLION MILER STATUS
               </p>
-              <p className="text-white text-[55px] italic font-[900]">
+              <p className="text-white text-2xl md:text-[55px] italic font-[900]">
                 184,216
               </p>
-              <p className="text-white text-lg font-medium">All Miles Flown</p>
+              <p className="text-white text-sm font-medium">All Miles Flown</p>
             </div>
             <Image
               src="/svg/waiting.svg"
               width={180}
               height={180}
               alt="waiting"
-              className="absolute right-4"
+              className="absolute right-4 md:w-[180px] md:h-[180px] w-32 h-32"
             />
           </div>
           <div className="bg-light-gray pt-6 px-7 overflow-hidden">
@@ -242,7 +272,7 @@ export default function BoardingPassScanner() {
               className="bg-light-blue p-4 flex items-center w-full justify-between"
               onClick={() => setIsScannerOpen(true)}
             >
-              <p className="text-primary-blue text-3xl font-semibold">
+              <p className="text-primary-blue text-xl md:text-3xl font-semibold">
                 Scan Boarding Pass
               </p>
               <Image src="/svg/stamp.svg" width={60} height={70} alt="Stamp" />
@@ -315,18 +345,20 @@ const FlightCard: React.FC<FlightCardProps> = ({
 }) => (
   <div className="bg-white rounded-[10px] pt-6 pb-5 pr-4 pl-7 border border-light-blue flex justify-between items-center">
     <div>
-      <p className=" text-dark-gray text-2xl font-normal">
+      <p className=" text-dark-gray text-lg md:text-2xl font-normal">
         {from} - {to}
       </p>
-      <p className="text-lg  text-dark-gray font-bold">{flightNumber}</p>
-      <p className="text-base text-gray/45 font-normal">{date}</p>
+      <p className=" text-sm md:text-lg  text-dark-gray font-bold">
+        {flightNumber}
+      </p>
+      <p className="text-xs md:text-base text-gray/45 font-normal">{date}</p>
     </div>
     <div className="flex items-center gap-3">
       <div className="text-right">
-        <p className="text-dark-gray text-lg font-normal">
+        <p className="text-dark-gray text-sm md:text-lg font-normal">
           {miles} Miles Flown
         </p>
-        <p className="text-primary-blue text-lg font-normal">
+        <p className="text-primary-blue md:text-lg text-sm font-normal">
           +{highMiles} HighMiles
         </p>
       </div>

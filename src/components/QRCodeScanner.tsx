@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useEffect } from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import { QrReader, OnResultFunction } from "react-qr-reader";
 import Image from "next/image";
 import {
@@ -9,8 +10,13 @@ import {
 import { baseSepolia } from "viem/chains";
 import { getAddProofContract, getAddTripContract } from "@/lib/contracts";
 import { useAccount } from "wagmi";
-import { BoardingPassResponse } from "@/lib/boardingPassApi";
+import {
+  BoardingPassResponse,
+  getBoardingPassData,
+} from "@/lib/boardingPassApi";
 import { convertToValidArg } from "@/lib/utils";
+import BoardingPassContainer from "./BoardingPassContainer";
+import Link from "next/link";
 
 interface QRCodeScannerProps {
   onScan: (data: string) => void;
@@ -21,7 +27,9 @@ interface QRCodeScannerProps {
   handleAddProof: (status: LifecycleStatus) => void;
   isLoading: boolean;
   isUserRegistered: boolean;
-  getPassData: () => Promise<BoardingPassResponse | undefined>;
+  boardingPassData: BoardingPassResponse | undefined;
+  handleReset: () => void;
+  txnHash: string;
 }
 
 const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
@@ -33,24 +41,23 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   signalHash,
   handleAddTrip,
   isLoading,
-  getPassData,
+  boardingPassData,
+  handleReset,
+  txnHash,
 }) => {
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const { address } = useAccount();
-  const [boardingPassData, setBoardingPassData] = useState<
-    BoardingPassResponse | undefined
-  >();
   const [addTripContracts, setAddTripContracts] = useState<any>(null);
+  const [error, setError] = useState<null | string>(null);
 
-  const handleScan: OnResultFunction = (data) => {
+  const handleScan: OnResultFunction = async (data, error) => {
     if (data) {
       console.log("🚀 ~ data:", data);
       onScan(data.getText());
-      onClose();
+    }
+    if (error) {
+      setError(error.message);
     }
   };
-
-  const isVerified = proofHash && signalHash;
 
   const addProofContracts = getAddProofContract({
     userAddress: address as any,
@@ -58,14 +65,6 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     signalHash,
   });
 
-  useEffect(() => {
-    const fetchBoardingPassData = async () => {
-      const data = await getPassData();
-      setBoardingPassData(data);
-    };
-
-    fetchBoardingPassData();
-  }, []);
   useEffect(() => {
     const setupAddTripContracts = async () => {
       if (boardingPassData) {
@@ -87,9 +86,11 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
         setAddTripContracts(contracts);
       }
     };
-
-    setupAddTripContracts();
+    if (!addTripContracts && boardingPassData) {
+      setupAddTripContracts();
+    }
   }, [boardingPassData, address]);
+
 
   return (
     <div className="mx-auto  min-h-screen max-w-md w-full overflow-hidden">
@@ -98,7 +99,6 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
           <button
             onClick={() => {
               onClose();
-              setBoardingPassData(undefined);
               setAddTripContracts(null);
             }}
             className="text-white font-semibold text-3xl text-left mb-6"
@@ -113,75 +113,105 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
               <Image src="/svg/stamp.svg" width={60} height={70} alt="Stamp" />
             </div>
 
-            {!isVerified && (
+            {!boardingPassData && (
               <>
                 <QrReader
                   className="h-72 w-full rounded-lg"
                   onResult={handleScan}
-                  constraints={{ facingMode: "user" }}
+                  constraints={{ facingMode: "environment" }}
                 />
                 <p className="text-dark-gray font-semibold text-2xl mt-10">
                   Make sure your pass is aligned in the window above.
                 </p>
+                {error && (
+                  <span className="text-sm text-left self-left text-red-600 font-medium">
+                    *{error}
+                  </span>
+                )}
               </>
             )}
-            {boardingPassData && (
-              <div className="bg-white rounded-[10px] px-6 py-4 mt-4">
-                <p className="text-gray/55 text-lg font-normal">{`${new Date(
-                  boardingPassData.data.legs[0].flightDate
-                )}`}</p>
-                <p className="text-dark-gray text-2xl font-bold">
-                  {boardingPassData.data.passengerFirstName}/
-                  {boardingPassData.data.passengerFirstName}
+            {boardingPassData && !txnHash && (
+              <BoardingPassContainer
+                arrivalAirport={boardingPassData.data.legs[0].arrivalAirport}
+                date={boardingPassData.data.legs[0].flightDate}
+                departureAirport={
+                  boardingPassData.data.legs[0].departureAirport
+                }
+                firstName={boardingPassData.data.passengerFirstName}
+                flighNum={boardingPassData.data.legs[0].flightNumber}
+                handleReset={handleReset}
+                lastName={boardingPassData.data.passengerLastName}
+              />
+            )}
+
+            {txnHash && (
+              <div className="bg-white w-full flex flex-col items-center justify-start rounded-[10px] px-6 py-4 mt-4 relative gap-2">
+                <Image
+                  src={"/svg/successtick.svg"}
+                  width={30}
+                  height={30}
+                  className=""
+                  alt="tick"
+                />
+                <p className="text-black/80 font-medium text-base">
+                  Trip added successfully!
                 </p>
-                <p className="text-dark-gray text-2xl font-normal">
-                  {boardingPassData.data.legs[0].arrivalAirport}-
-                  {boardingPassData.data.legs[0].departureAirport}
-                </p>
-                <p className="text-dark-gray text-lg font-bold">
-                  {boardingPassData.data.legs[0].flightNumber}
-                </p>
+                <Link
+                  target="_blank"
+                  href={`https://sepolia.basescan.org/tx/${txnHash}`}
+                  className="underline text-sm font-normal text-blue-500"
+                >
+                  View on basescan
+                </Link>
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-dark-gray w-full p-4 text-center mt-auto ">
-          <button className="flex items-center justify-between w-full px-10 py-6">
-            <p className="text-left text-white text-3xl font-semibold">
-              {isLoading ? (
-                "Loading..."
-              ) : (
-                <>
-                  {!isUserRegistered ? (
-                    <Transaction
-                      chainId={baseSepolia.id}
-                      contracts={addProofContracts}
-                      onStatus={handleAddProof}
-                    >
-                      <TransactionButton text="Add Proof" className="txn-btn" />
-                    </Transaction>
-                  ) : addTripContracts ? (
-                    <Transaction
-                      chainId={baseSepolia.id}
-                      contracts={addTripContracts}
-                      onStatus={handleAddProof}
-                    >
-                      <TransactionButton text="Add Trip" className="txn-btn" />
-                    </Transaction>
-                  ) : (
-                    "Error happened :( ). Try again later!"
-                  )}
-                </>
-              )}
-            </p>
-            <Image
-              src="/svg/airplane.svg"
-              width={88}
-              height={88}
-              alt="airplane icon"
-            />
-          </button>
+        <div className="flex items-center justify-between mt-auto bg-dark-gray  disabled:cursor-not-allowed w-full px-10 py-6">
+          <div className="text-left text-white text-3xl font-semibold">
+            {isLoading ? (
+              "Loading..."
+            ) : (
+              <>
+                {!isUserRegistered ? (
+                  <Transaction
+                    onError={(error) => console.log(error.message)}
+                    chainId={baseSepolia.id}
+                    contracts={addProofContracts}
+                    onStatus={handleAddProof}
+                  >
+                    <TransactionButton
+                      text="Add Proof"
+                      disabled={isLoading}
+                      className="txn-btn disabled:cursor-not-allowed"
+                    />
+                  </Transaction>
+                ) : addTripContracts && boardingPassData ? (
+                  <Transaction
+                    onError={handleReset}
+                    chainId={baseSepolia.id}
+                    contracts={addTripContracts}
+                    onStatus={handleAddTrip}
+                  >
+                    <TransactionButton
+                      disabled={isLoading || !addTripContracts}
+                      text="Add Trip"
+                      className="txn-btn disabled:cursor-not-allowed"
+                    />
+                  </Transaction>
+                ) : (
+                  "Scan to continue"
+                )}
+              </>
+            )}
+          </div>
+          <Image
+            src="/svg/airplane.svg"
+            width={88}
+            height={88}
+            alt="airplane icon"
+          />
         </div>
       </div>
     </div>

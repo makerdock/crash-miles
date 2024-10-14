@@ -3,15 +3,14 @@
 import BoardingPassScanner from "@/components/BarcodeScanner";
 import AwaitingConnection from "@/components/ui/AwaitingConnection";
 import WalletConnection from "@/components/WalletConnection";
-
 import Image from "next/image";
 import { useAccount } from "wagmi";
 
 export default function Home() {
-  const { address, isConnecting, isReconnecting } = useAccount();
+  const { address, isConnecting } = useAccount();
 
   return (
-    <main className="mx-auto">
+    <main className="mx-auto w-full max-w-full min-h-screen">
       {address ? (
         <BoardingPassScanner />
       ) : isConnecting ? (
