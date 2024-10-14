@@ -1,8 +1,4 @@
 "use client";
-
-import { useState } from "react";
-import { ethers } from "ethers";
-import { useToast } from "@/components/ui/use-toast";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import {
   ConnectWallet,
@@ -72,7 +68,7 @@ export default function WalletConnection() {
           >
             <Name className="text-white text-xl" />
           </ConnectWallet>
-          <WalletDropdown className="bg-white z-10 border-2 border-blue-600 rounded-none">
+          <WalletDropdown className="bg-white z-50 border-2 border-blue-600 rounded-none">
             <Identity
               className="px-4 pt-3 pb-2 bg-white"
               hasCopyAddressOnClick={true}
