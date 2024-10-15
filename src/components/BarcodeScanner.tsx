@@ -4,10 +4,7 @@ import { ethers } from "ethers";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { generateZKProof, verifyZKProof } from "@/lib/zkProofs";
-import {
-  CONTRACT_ADDRESS,
-  contractInteraction,
-} from "@/lib/contractInteraction";
+import { CONTRACT_ADDRESS } from "@/lib/contractInteraction";
 import {
   BoardingPassResponse,
   getBoardingPassData,
@@ -23,6 +20,8 @@ import WalletConnection from "./WalletConnection";
 import { Avatar } from "@coinbase/onchainkit/identity";
 import { RxAvatar } from "react-icons/rx";
 import { useWagmiConfig } from "@/lib/wagmi";
+import { addTrip, TripResponse } from "@/lib/db";
+import useGetTrips from "@/hooks/useGetTrips";
 
 export default function BoardingPassScanner() {
   const { address: userAddress } = useAccount();
@@ -40,16 +39,55 @@ export default function BoardingPassScanner() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [boardingPassData, setBoardingPassData] = useState<
     BoardingPassResponse | undefined
-  >();
-  const [scannedData, setScannedData] = useState<string>("");
+  >({
+    data: {
+      passengerName: "BHIMTE/UTKARSH",
+      passengerFirstName: "UTKARSH",
+      passengerLastName: "BHIMTE",
+      legs: [
+        {
+          operatingCarrierPNR: "EDUTVE",
+          departureAirport: "BOM",
+          arrivalAirport: "BLR",
+          operatingCarrierDesignator: "QP",
+          flightNumber: "1367",
+          flightDate: "2066-09-10",
+          compartmentCode: "Y",
+          seatNumber: "005D",
+          checkInSequenceNumber: "0100",
+          passengerStatus: "1",
+          airlineNumericCode: "516",
+          serialNumber: "0000000000",
+          selecteeIndicator: "null",
+          internationalDocumentationVerification: "0",
+          marketingCarrierDesignator: "null",
+          frequentFlyerAirlineDesignator: "null",
+          frequentFlyerNumber: "null",
+          idIndicator: null,
+          freeBaggageAllowance: null,
+          fastTrack: null,
+          airlineInfo: "null",
+        },
+      ],
+    },
+    meta: {
+      formatCode: "M",
+      numberOfLegs: 1,
+      electronicTicketIndicator: "null",
+      versionNumberIndicator: ">",
+      versionNumber: 1,
+      securityDataIndicator: "null",
+    },
+  });
+  const [scannedData, setScannedData] = useState<string>(
+    `M1ASKREN/TEST         EA272SL ORDNRTUA 0881 007F002K0303 15C>3180 M6007BUA              2901624760758980 UA UA EY975897            *30600    09  UAG    ^160MEUCIQC1k/QcCEoSFjSivLo3RWiD3268l+OLdrFMTbTyMLRSbAIgb4JVCsWKx/h5HP7+sApYU6nwvM/70IKyUrX28SC+b94=`
+  );
   const [txnHash, setTxnHash] = useState<string>("");
 
-  // `M1ASKREN/TEST         EA272SL ORDNRTUA 0881 007F002K0303 15C>3180 M6007BUA              2901624760758980 UA UA EY975897            *30600    09  UAG    ^160MEUCIQC1k/QcCEoSFjSivLo3RWiD3268l+OLdrFMTbTyMLRSbAIgb4JVCsWKx/h5HP7+sApYU6nwvM/70IKyUrX28SC+b94=`
   const { toast } = useToast();
 
-  // useEffect(() => {
-  //   contractInteraction.connect();
-  // }, []);
+  const userTrips = useGetTrips();
+  console.log(userTrips?.data);
 
   // gets the boarding pass data and verify it and returns proof hashes
   const handleVerification = async () => {
@@ -108,13 +146,24 @@ export default function BoardingPassScanner() {
   };
 
   const handleAddTrip = async (lifeCycleRes: LifecycleStatus) => {
-    if (txnHash) return;
+    if (txnHash || !boardingPassData) return;
     setIsLoading(true);
     try {
       if (lifeCycleRes.statusName === "success") {
         const txnReceipt = lifeCycleRes.statusData.transactionReceipts[0];
         const txn = txnReceipt.transactionHash;
         setTxnHash(txn);
+        const trip = {
+          arrivalAirport: boardingPassData?.data.legs[0].arrivalAirport,
+          departureAirport: boardingPassData?.data.legs[0].departureAirport,
+          flightNumber: boardingPassData?.data.legs[0].flightNumber,
+          miles: 100,
+          userAddress: userAddress as `0x${string}`,
+          date: boardingPassData?.data.legs[0].flightDate,
+        };
+        const newTripId = await addTrip(trip);
+        console.log("trip added successfully with id : ", newTripId);
+
         toast({
           title: "Success",
           description: "Trip added successfully",
@@ -136,6 +185,7 @@ export default function BoardingPassScanner() {
           description: lifeCycleRes.statusData.message,
           variant: "destructive",
         });
+        // handleReset();
         setIsLoading(false);
       }
     } catch (error) {
@@ -186,7 +236,6 @@ export default function BoardingPassScanner() {
       !hashes.signalHash &&
       !isLoading
     ) {
-
       handleVerification();
     }
   }, [scannedData]);
@@ -280,49 +329,45 @@ export default function BoardingPassScanner() {
             <p className="text-black text-lg font-bold mb-4 mt-9 uppercase">
               Logged Flights
             </p>
-            <div className="flex flex-col gap-3 overflow-auto">
-              <FlightCard
-                from="DTW"
-                to="PHL"
-                flightNumber="DL1373"
-                date="Sep 29, 2024"
-                miles="2,219"
-                highMiles="400"
-              />
-              <FlightCard
-                from="DTW"
-                to="PHL"
-                flightNumber="DL1373"
-                date="Sep 29, 2024"
-                miles="2,219"
-                highMiles="400"
-              />
-              <FlightCard
-                from="DTW"
-                to="PHL"
-                flightNumber="DL1373"
-                date="Sep 29, 2024"
-                miles="2,219"
-                highMiles="400"
-              />
+            <div className="flex flex-col gap-3 overflow-auto text-black">
+              {userTrips?.isLoading ? (
+                "Trips Loading..."
+              ) : (
+                <>
+                  {!userTrips ||
+                  !userTrips.data ||
+                  userTrips.data.length === 0 ? (
+                    <>
+                      <span className="text-black self-center text-lg font-medium">
+                        No Flights Logged Yet!
+                      </span>
+                      <button
+                        className="text-blue-800 font-semibold text-sm underline bg-transparent border-0 focus:border-0 focus:outline-none focus:ring-0"
+                        onClick={() => setIsScannerOpen(true)}
+                      >
+                        Start Scanning
+                      </button>
+                    </>
+                  ) : (
+                    userTrips.data.map((trip: TripResponse) => (
+                      <FlightCard
+                        key={trip.id}
+                        from={trip.departureAirport}
+                        to={trip.arrivalAirport}
+                        flightNumber={trip.flightNumber}
+                        date={trip.date}
+                        miles={trip.miles.toString()}
+                        highMiles={(trip.miles * 0.1).toString()} // Example calculation for highMiles
+                      />
+                    ))
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
     </main>
-    // <div className="space-y-4 mt-4">
-    //   <div className="space-y-2">
-    //     <Label htmlFor="boardingPass">Boarding Pass Data</Label>
-    //     <QRCodeScanner onScan={setScannedData} />
-    //     <Input
-    //       id="boardingPass"
-    //       placeholder="Enter boarding pass data"
-    //       value={scannedData}
-    //       onChange={(e) => setScannedData(e.target.value)}
-    //     />
-    //   </div>
-    //   <Button onClick={handleScan}>Process Boarding Pass</Button>
-    // </div>
   );
 }
 

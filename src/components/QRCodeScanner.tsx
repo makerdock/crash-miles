@@ -91,7 +91,6 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     }
   }, [boardingPassData, address]);
 
-
   return (
     <div className="mx-auto  min-h-screen max-w-md w-full overflow-hidden">
       <div className="bg-[url('/images/cloud-bg.jpeg')] relative text-white min-h-screen flex flex-col max-w-md w-full overflow-hidden bg-center bg-cover">
@@ -174,20 +173,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
               "Loading..."
             ) : (
               <>
-                {!isUserRegistered ? (
-                  <Transaction
-                    onError={(error) => console.log(error.message)}
-                    chainId={baseSepolia.id}
-                    contracts={addProofContracts}
-                    onStatus={handleAddProof}
-                  >
-                    <TransactionButton
-                      text="Add Proof"
-                      disabled={isLoading}
-                      className="txn-btn disabled:cursor-not-allowed"
-                    />
-                  </Transaction>
-                ) : addTripContracts && boardingPassData ? (
+                {addTripContracts && boardingPassData ? (
                   <Transaction
                     onError={handleReset}
                     chainId={baseSepolia.id}
