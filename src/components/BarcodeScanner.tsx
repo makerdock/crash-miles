@@ -39,51 +39,11 @@ export default function BoardingPassScanner() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [boardingPassData, setBoardingPassData] = useState<
     BoardingPassResponse | undefined
-  >({
-    data: {
-      passengerName: "BHIMTE/UTKARSH",
-      passengerFirstName: "UTKARSH",
-      passengerLastName: "BHIMTE",
-      legs: [
-        {
-          operatingCarrierPNR: "EDUTVE",
-          departureAirport: "BOM",
-          arrivalAirport: "BLR",
-          operatingCarrierDesignator: "QP",
-          flightNumber: "1367",
-          flightDate: "2066-09-10",
-          compartmentCode: "Y",
-          seatNumber: "005D",
-          checkInSequenceNumber: "0100",
-          passengerStatus: "1",
-          airlineNumericCode: "516",
-          serialNumber: "0000000000",
-          selecteeIndicator: "null",
-          internationalDocumentationVerification: "0",
-          marketingCarrierDesignator: "null",
-          frequentFlyerAirlineDesignator: "null",
-          frequentFlyerNumber: "null",
-          idIndicator: null,
-          freeBaggageAllowance: null,
-          fastTrack: null,
-          airlineInfo: "null",
-        },
-      ],
-    },
-    meta: {
-      formatCode: "M",
-      numberOfLegs: 1,
-      electronicTicketIndicator: "null",
-      versionNumberIndicator: ">",
-      versionNumber: 1,
-      securityDataIndicator: "null",
-    },
-  });
-  const [scannedData, setScannedData] = useState<string>(
-    `M1ASKREN/TEST         EA272SL ORDNRTUA 0881 007F002K0303 15C>3180 M6007BUA              2901624760758980 UA UA EY975897            *30600    09  UAG    ^160MEUCIQC1k/QcCEoSFjSivLo3RWiD3268l+OLdrFMTbTyMLRSbAIgb4JVCsWKx/h5HP7+sApYU6nwvM/70IKyUrX28SC+b94=`
-  );
+  >();
+  const [scannedData, setScannedData] = useState<string>("");
   const [txnHash, setTxnHash] = useState<string>("");
 
+  // `M1ASKREN/TEST         EA272SL ORDNRTUA 0881 007F002K0303 15C>3180 M6007BUA              2901624760758980 UA UA EY975897            *30600    09  UAG    ^160MEUCIQC1k/QcCEoSFjSivLo3RWiD3268l+OLdrFMTbTyMLRSbAIgb4JVCsWKx/h5HP7+sApYU6nwvM/70IKyUrX28SC+b94=`
   const { toast } = useToast();
 
   const userTrips = useGetTrips();
