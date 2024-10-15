@@ -124,7 +124,8 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
                 </p>
                 {error && (
                   <span className="text-sm text-left self-left text-red-600 font-medium">
-                    *{error}
+                    *{error} <br/>
+                    please reload once and try again.
                   </span>
                 )}
               </>

@@ -8,8 +8,8 @@ import { useMemo } from "react";
 import { http, createConfig } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 
+const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID;
 export function useWagmiConfig() {
-  const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID;
   if (!projectId) {
     const providerErrMessage =
       "To connect to all Wallets you need to provide a WC_PROJECT_ID env variable";
@@ -47,3 +47,20 @@ export function useWagmiConfig() {
 
   return wagmiConfig;
 }
+
+export const connectors = connectorsForWallets(
+  [
+    {
+      groupName: "Recommended Wallet",
+      wallets: [coinbaseWallet],
+    },
+    {
+      groupName: "Other Wallets",
+      wallets: [rainbowWallet, metaMaskWallet],
+    },
+  ],
+  {
+    appName: "onchainkit",
+    projectId: projectId as string,
+  }
+);

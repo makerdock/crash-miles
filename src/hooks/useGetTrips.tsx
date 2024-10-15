@@ -5,9 +5,7 @@ import { useAccount } from "wagmi";
 
 const useGetTrips = () => {
   const { address } = useAccount();
-
-  if (!address) return;
-
+  
   const fetchTrips = async () => {
     try {
       const trips = await getTripsForUser(address as string);

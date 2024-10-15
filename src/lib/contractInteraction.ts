@@ -1,10 +1,20 @@
 // app/lib/contractInteractions.ts
 import { ethers } from "ethers";
 import { readContract, writeContract } from "wagmi/actions";
-import { useWagmiConfig } from "./wagmi";
+import { connectors, useWagmiConfig } from "./wagmi";
 import { CONTRACT_ABI } from "./contractABI";
+import { createConfig, http } from "wagmi";
+import { baseSepolia } from "viem/chains";
 
-const config = useWagmiConfig();
+const config = createConfig({
+  chains: [baseSepolia],
+  multiInjectedProviderDiscovery: false,
+  connectors: connectors,
+  ssr: true,
+  transports: {
+    [baseSepolia.id]: http(),
+  },
+});
 export const CONTRACT_ADDRESS = "0xc1d0ff567399b16deab4ef337fc9c9ef678e4840";
 
 class ContractInteraction {
