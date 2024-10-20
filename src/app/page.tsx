@@ -11,7 +11,7 @@ export default function Home() {
   const { address, isConnecting } = useAccount();
 
   return (
-    <main className="mx-auto w-full max-w-full min-h-[100dvh]">
+    <main>
       {address ? (
         <BoardingPassScanner />
       ) : isConnecting ? (

@@ -2,10 +2,14 @@ import Image from 'next/image'
 import React from 'react'
 import WalletConnection from './WalletConnection'
 import Marquee from './ui/marquee'
+import { cn } from '@/lib/utils'
 
 const LoginScreen = () => {
     return (
-        <div className="bg-dark-gray relative text-white min-h-screen flex flex-col items-center max-w-md w-full overflow-hidden mx-auto">
+        <div className={cn(
+            "bg-dark-gray relative text-white flex flex-col items-center w-full overflow-hidden mx-auto",
+            "h-[100dvh] flex flex-col justify-center"
+        )}>
             <div className="relative h-80 w-full">
                 <Image
                     src="/images/bg.png"
@@ -53,7 +57,7 @@ const LoginScreen = () => {
                     every trip you take.
                 </p>
             </div>
-            <div className="bg-dark-gray w-full text-center ">
+            <div className="bg-dark-gray w-full text-center sticky bottom-0">
                 <WalletConnection />
                 <div
                     className="text-lg text-white whitespace-nowrap font-mono font-medium"
