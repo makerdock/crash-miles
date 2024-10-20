@@ -60,7 +60,7 @@ const LoginScreen = () => {
             <div className="bg-dark-gray w-full text-center sticky bottom-0">
                 <WalletConnection />
                 <div
-                    className="text-lg text-white whitespace-nowrap font-mono font-medium"
+                    className="text-lg text-white whitespace-nowrap font-gravity font-medium"
                 >
                     <Marquee pauseOnHover className="[--duration:60s]">
                         CASH IN, $CRASH OUT. 747 AIRLINES DESTINATIONS. YOU DON&apos;T

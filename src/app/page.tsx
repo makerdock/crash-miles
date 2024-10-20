@@ -3,12 +3,12 @@
 import BoardingPassScanner from "@/components/BarcodeScanner";
 import LoginScreen from "@/components/LoginScreen";
 import AwaitingConnection from "@/components/ui/AwaitingConnection";
-import WalletConnection from "@/components/WalletConnection";
-import Image from "next/image";
 import { useAccount } from "wagmi";
 
 export default function Home() {
-  const { address, isConnecting } = useAccount();
+  // const { address,isConnecting } = useAccount();
+  const address = undefined
+  const isConnecting = true
 
   return (
     <main>

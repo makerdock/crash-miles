@@ -3,12 +3,13 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+// import { GeistMono } from "geist/font/mono";
 import ConnectWalletPopup from "@/components/ConnectWalletPopup";
 import OnchainProviders from "./providers";
 import '@rainbow-me/rainbowkit/styles.css';
 import "@rainbow-me/rainbowkit/styles.css";
 import '@coinbase/onchainkit/styles.css';
+import { abcGravity } from "./fonts";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className={`${GeistSans.variable} ${abcGravity.variable}`}>
         <OnchainProviders>
           <div className="md:hidden visible ">
             {children}
