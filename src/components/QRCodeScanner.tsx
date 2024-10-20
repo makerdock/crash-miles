@@ -19,6 +19,7 @@ import BoardingPassContainer from "./BoardingPassContainer";
 import Link from "next/link";
 import { FaAnglesRight } from "react-icons/fa6";
 import { motion } from "framer-motion";
+import { adjustFlightDate } from "@/lib/adjustFlightDate";
 
 const MotionImage = motion(Image);
 
@@ -49,9 +50,11 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   handleAddProof,
   txnHash,
 }) => {
-  console.log("🚀 ~ boardingPassData:", boardingPassData)
   const { address } = useAccount();
   const [error, setError] = useState<null | string>(null);
+
+  const sanitisedFlightDate = boardingPassData?.data.legs[0].flightDate && adjustFlightDate(boardingPassData?.data.legs[0].flightDate)
+  console.log("🚀 ~ sanitisedFlightDate:", sanitisedFlightDate)
 
   const handleScan: OnResultFunction = async (data, error) => {
     console.log("🚀 ~ consthandleScan:OnResultFunction= ~ data:", data)
@@ -143,7 +146,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
                       boardingPassData.data.legs[0].departureAirport
                     }
                     firstName={boardingPassData.data.passengerFirstName}
-                    flighNum={boardingPassData.data.legs[0].flightNumber}
+                    flighNum={boardingPassData.data.legs[0].operatingCarrierDesignator + boardingPassData.data.legs[0].flightNumber}
                     handleReset={handleReset}
                     lastName={boardingPassData.data.passengerLastName}
                   />

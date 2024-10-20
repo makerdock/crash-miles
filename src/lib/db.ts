@@ -33,8 +33,7 @@ export type TripResponse = Trip & {
 export async function addTrip(trip: Trip): Promise<TripResponse> {
   try {
     const response = await fetch(
-      process.env.NEXT_PUBLIC_URL ??
-      "http://localhost:3000" + "/api/db/addTrip",
+      getHost() + "/api/db/addTrip",
       {
         method: "POST",
         headers: {

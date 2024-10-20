@@ -30,7 +30,6 @@ export default function BoardingPassScanner() {
     functionName: "isUserRegistered",
     args: [userAddress as any],
   });
-  console.log("🚀 ~ BoardingPassScanner ~ isUserRegistered:", isUserRegistered)
   const [isLoading, setIsLoading] = useState(false);
   const [hashes, setHashes] = useState({
     proofHash: "",
@@ -47,7 +46,6 @@ export default function BoardingPassScanner() {
   const { toast } = useToast();
 
   const userTrips = useGetTrips();
-  console.log(userTrips?.data);
 
   // gets the boarding pass data and verify it and returns proof hashes
   const handleVerification = async () => {
@@ -122,6 +120,7 @@ export default function BoardingPassScanner() {
           date: boardingPassData?.data.legs[0].flightDate,
         };
         const newTripId = await addTrip(trip);
+
         console.log("trip added successfully with id : ", newTripId);
 
         toast({
@@ -207,6 +206,7 @@ export default function BoardingPassScanner() {
     setScannedData("");
     setIsLoading(false);
   };
+
 
   return (
     <main className="mx-auto w-full font-sans">

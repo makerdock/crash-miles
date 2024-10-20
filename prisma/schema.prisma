@@ -13,9 +13,8 @@ model Trip {
   arrivalairport   String   @db.VarChar(255)
   departureairport String   @db.VarChar(255)
   flightnumber     String   @db.VarChar(20)
+  pnr              String   @db.VarChar(20)
   miles            Int
-  date             String   @db.VarChar(20)
   startTime        DateTime
-  endTime          DateTime
   createdAt        DateTime @default(now())
 }

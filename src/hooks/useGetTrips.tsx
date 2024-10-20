@@ -5,7 +5,7 @@ import { useAccount } from "wagmi";
 
 const useGetTrips = () => {
   const { address } = useAccount();
-  
+
   const fetchTrips = async () => {
     try {
       const trips = await getTripsForUser(address as string);
@@ -16,6 +16,7 @@ const useGetTrips = () => {
   };
 
   return useQuery({
+    refetchOnWindowFocus: true,
     queryKey: ["getTrips"],
     queryFn: async () => await fetchTrips(),
   });
