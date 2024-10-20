@@ -92,19 +92,19 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   }, [boardingPassData, address]);
 
   return (
-    <div className="mx-auto  min-h-screen max-w-md w-full overflow-hidden">
-      <div className="bg-[url('/images/cloud-bg.jpeg')] relative text-white min-h-screen flex flex-col max-w-md w-full overflow-hidden bg-center bg-cover">
-        <div className="p-6 mt-8">
+    <div className="mx-auto w-full">
+      <div className="bg-[url('/images/cloud-bg.jpeg')] relative text-white min-h-screen flex flex-col w-full bg-center bg-cover h-[100dvh]">
+        <div className="px-6 pt-6 flex-1">
           <button
             onClick={() => {
               onClose();
               setAddTripContracts(null);
             }}
-            className="text-white font-semibold text-3xl text-left mb-6"
+            className="text-white font-semibold text-xl text-left mb-6"
           >
             ← EXIT
           </button>
-          <div className="bg-light-blue w-full px-5 py-8">
+          <div className="bg-light-blue w-full p-4">
             <div className="flex items-center w-full justify-between">
               <p className="text-primary-blue text-3xl font-semibold">
                 Scan Boarding Pass
@@ -115,16 +115,16 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
             {!boardingPassData && (
               <>
                 <QrReader
-                  className="h-72 w-full rounded-lg"
+                  className="w-full rounded-lg aspect-square my-6 [&_video]:object-cover [&_video]:aspect-square"
                   onResult={handleScan}
                   constraints={{ facingMode: "environment" }}
                 />
-                <p className="text-dark-gray font-semibold text-2xl mt-10">
+                <p className="text-dark-gray font-semibold text-base">
                   Make sure your pass is aligned in the window above.
                 </p>
                 {error && (
                   <span className="text-sm text-left self-left text-red-600 font-medium">
-                    *{error} <br/>
+                    *{error} <br />
                     please reload once and try again.
                   </span>
                 )}
@@ -168,7 +168,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-auto bg-dark-gray  disabled:cursor-not-allowed w-full px-10 py-6">
+        <div className="flex items-center justify-between mt-auto bg-dark-gray  disabled:cursor-not-allowed w-full px-10 py-6 sticky bottom-0">
           <div className="text-left text-white text-3xl font-semibold">
             {isLoading ? (
               "Loading..."

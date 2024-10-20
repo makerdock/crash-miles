@@ -1,17 +1,24 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+
+import '@coinbase/onchainkit/styles.css';
+import '@rainbow-me/rainbowkit/styles.css';
 import "./globals.css";
+
+import ConnectWalletPopup from "@/components/ConnectWalletPopup";
 import { Toaster } from "@/components/ui/toaster";
 import { GeistSans } from "geist/font/sans";
-// import { GeistMono } from "geist/font/mono";
-import ConnectWalletPopup from "@/components/ConnectWalletPopup";
-import OnchainProviders from "./providers";
-import '@rainbow-me/rainbowkit/styles.css';
-import "@rainbow-me/rainbowkit/styles.css";
-import '@coinbase/onchainkit/styles.css';
-import { abcGravity } from "./fonts";
+// import OnchainProviders from "./providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const OnchainProviders = dynamic(
+  () => import('../components/WalletProvider'),
+  {
+    ssr: false,
+  },
+);
+
+import dynamic from "next/dynamic";
+import { abcGravity } from "./fonts";
 
 export const metadata: Metadata = {
   title: "Air Miles PWA",

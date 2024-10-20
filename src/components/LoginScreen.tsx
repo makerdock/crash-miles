@@ -46,7 +46,7 @@ const LoginScreen = () => {
             </div>
 
             <div className="bg-primary-blue w-full p-8 text-center flex-1 flex items-center justify-center flex-col">
-                <h2 className="text-5xl font-bold mb-4 italic tracking-tighter font-sans">
+                <h2 className="text-5xl font-black mb-4 italic font-gravity">
                     MILES ON
                     <br />
                     MILES

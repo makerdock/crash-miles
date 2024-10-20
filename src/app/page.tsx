@@ -6,9 +6,8 @@ import AwaitingConnection from "@/components/ui/AwaitingConnection";
 import { useAccount } from "wagmi";
 
 export default function Home() {
-  // const { address,isConnecting } = useAccount();
-  const address = undefined
-  const isConnecting = true
+  const { address, isConnecting, ...rest } = useAccount();
+  console.log("🚀 ~ Home ~ address:", address, rest)
 
   return (
     <main>

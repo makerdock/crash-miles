@@ -1,65 +1,54 @@
-import { connectorsForWallets } from "@rainbow-me/rainbowkit";
+'use client';
+import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import {
   coinbaseWallet,
   metaMaskWallet,
   rainbowWallet,
-} from "@rainbow-me/rainbowkit/wallets";
-import { createConfig, http } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+} from '@rainbow-me/rainbowkit/wallets';
+import { useMemo } from 'react';
+import { http, createConfig } from 'wagmi';
+import { base, baseSepolia } from 'wagmi/chains';
+// import { env } from '~/env';
+// import { NEXT_PUBLIC_WC_PROJECT_ID } from './config';
 
-const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID;
 export function useWagmiConfig() {
+  const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID;
   if (!projectId) {
     const providerErrMessage =
-      "To connect to all Wallets you need to provide a WC_PROJECT_ID env variable";
-
+      'To connect to all Wallets you need to provide a NEXT_PUBLIC_WC_PROJECT_ID env variable';
     throw new Error(providerErrMessage);
   }
 
-  const connectors = connectorsForWallets(
-    [
+  return useMemo(() => {
+    const connectors = connectorsForWallets(
+      [
+        {
+          groupName: 'Recommended Wallet',
+          wallets: [coinbaseWallet],
+        },
+        {
+          groupName: 'Other Wallets',
+          wallets: [rainbowWallet, metaMaskWallet],
+        },
+      ],
       {
-        groupName: "Recommended Wallet",
-        wallets: [coinbaseWallet],
+        appName: 'onchainkit',
+        projectId,
       },
-      {
-        groupName: "Other Wallets",
-        wallets: [rainbowWallet, metaMaskWallet],
+    );
+
+    const wagmiConfig = createConfig({
+      chains: [base, baseSepolia],
+      // turn off injected provider discovery
+      multiInjectedProviderDiscovery: false,
+      connectors,
+      ssr: true,
+      transports: {
+        [base.id]: http(),
+        [baseSepolia.id]: http(),
       },
-    ],
-    {
-      appName: "onchainkit",
-      projectId,
-    }
-  );
+    });
 
-  const wagmiConfig = createConfig({
-    chains: [baseSepolia],
-    // turn off injected provider discovery
-    multiInjectedProviderDiscovery: false,
-    connectors,
-    ssr: true,
-    transports: {
-      [baseSepolia.id]: http(),
-    },
-  });
-
-  return wagmiConfig;
+    return wagmiConfig;
+  }, [projectId]);
 }
-
-export const connectors = connectorsForWallets(
-  [
-    {
-      groupName: "Recommended Wallet",
-      wallets: [coinbaseWallet],
-    },
-    {
-      groupName: "Other Wallets",
-      wallets: [rainbowWallet, metaMaskWallet],
-    },
-  ],
-  {
-    appName: "onchainkit",
-    projectId: projectId as string,
-  }
-);
