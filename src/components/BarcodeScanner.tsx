@@ -21,6 +21,8 @@ import { RxAvatar } from "react-icons/rx";
 import { useAccount, useReadContract } from "wagmi";
 import QRCodeScanner from "./QRCodeScanner";
 import WalletConnection from "./WalletConnection";
+import { adjustFlightDate } from "@/lib/adjustFlightDate";
+import { insertTrip, TripInput } from "@/actions/insertTrip";
 
 export default function BoardingPassScanner() {
   const { address: userAddress } = useAccount();
@@ -107,19 +109,25 @@ export default function BoardingPassScanner() {
     if (txnHash || !boardingPassData) return;
     setIsLoading(true);
     try {
+
       if (lifeCycleRes.statusName === "success") {
         const txnReceipt = lifeCycleRes.statusData.transactionReceipts[0];
         const txn = txnReceipt.transactionHash;
         setTxnHash(txn);
-        const trip = {
+
+        const sanitisedFlightDate = boardingPassData?.data.legs[0].flightDate && adjustFlightDate(boardingPassData?.data.legs[0].flightDate).toISOString()
+
+        const trip: TripInput = {
           arrivalAirport: boardingPassData?.data.legs[0].arrivalAirport,
           departureAirport: boardingPassData?.data.legs[0].departureAirport,
           flightNumber: boardingPassData?.data.legs[0].flightNumber,
           miles: 100,
+
           userAddress: userAddress as `0x${string}`,
-          date: boardingPassData?.data.legs[0].flightDate,
+          date: sanitisedFlightDate,
+          pnr: boardingPassData?.data.legs[0].operatingCarrierPNR,
         };
-        const newTripId = await addTrip(trip);
+        const newTripId = await insertTrip(trip);
 
         console.log("trip added successfully with id : ", newTripId);
 

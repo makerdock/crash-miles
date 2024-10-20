@@ -53,9 +53,6 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   const { address } = useAccount();
   const [error, setError] = useState<null | string>(null);
 
-  const sanitisedFlightDate = boardingPassData?.data.legs[0].flightDate && adjustFlightDate(boardingPassData?.data.legs[0].flightDate)
-  console.log("🚀 ~ sanitisedFlightDate:", sanitisedFlightDate)
-
   const handleScan: OnResultFunction = async (data, error) => {
     console.log("🚀 ~ consthandleScan:OnResultFunction= ~ data:", data)
     if (data) {

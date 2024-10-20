@@ -9,6 +9,7 @@ export interface TripInput {
     arrivalAirport: string;
     departureAirport: string;
     date: string;
+    pnr: string;
     flightNumber: string;
     miles: number;
 }
@@ -17,12 +18,13 @@ export async function insertTrip(data: TripInput) {
     try {
         const trip = await prisma.trip.create({
             data: {
-                userAddress: data.userAddress,
-                arrivalAirport: data.arrivalAirport,
-                departureAirport: data.departureAirport,
-                date: new Date(data.date), // Convert string to Date object
-                flightNumber: data.flightNumber,
+                useraddress: data.userAddress,
+                arrivalairport: data.arrivalAirport,
+                departureairport: data.departureAirport,
+                startTime: new Date(data.date), // Convert string to Date object
+                flightnumber: data.flightNumber,
                 miles: data.miles,
+                pnr: data.pnr
             },
         })
 
