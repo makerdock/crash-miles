@@ -3,7 +3,7 @@ import { usePublicClient, useWalletClient } from 'wagmi';
 import { CONTRACT_ABI } from './contractABI';
 import { ethers } from 'ethers';
 
-export const CONTRACT_ADDRESS = "0xc1d0ff567399b16deab4ef337fc9c9ef678e4840";
+export const CONTRACT_ADDRESS = "0x77eb8C27B70087636FBeCC618b1f9298a4A6D862";
 
 export const useContractInteraction = () => {
   const publicClient = usePublicClient();

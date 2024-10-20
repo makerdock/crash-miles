@@ -30,6 +30,7 @@ export default function BoardingPassScanner() {
     functionName: "isUserRegistered",
     args: [userAddress as any],
   });
+  console.log("🚀 ~ BoardingPassScanner ~ isUserRegistered:", isUserRegistered)
   const [isLoading, setIsLoading] = useState(false);
   const [hashes, setHashes] = useState({
     proofHash: "",
@@ -139,12 +140,12 @@ export default function BoardingPassScanner() {
         });
         setIsLoading(false);
       } else if (lifeCycleRes.statusName === "error") {
+        console.log("🚀 ~ handleAddTrip ~ lifeCycleRes:", lifeCycleRes)
         toast({
           title: "Error",
           description: lifeCycleRes.statusData.message,
           variant: "destructive",
         });
-        // handleReset();
         setIsLoading(false);
       }
     } catch (error) {
@@ -161,6 +162,7 @@ export default function BoardingPassScanner() {
   };
 
   const handleAddProof = useCallback((status: LifecycleStatus) => {
+    console.log("🚀 ~ handleAddProof ~ status:", status)
     if (isUserRegistered) return;
     if (status.statusName === "success") {
       toast({ title: "Proof added successfully ✅" });
