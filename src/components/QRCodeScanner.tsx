@@ -14,10 +14,13 @@ import {
   BoardingPassResponse,
   getBoardingPassData,
 } from "@/lib/boardingPassApi";
-import { convertToValidArg } from "@/lib/utils";
+import { cn, convertToValidArg } from "@/lib/utils";
 import BoardingPassContainer from "./BoardingPassContainer";
 import Link from "next/link";
 import { FaAnglesRight } from "react-icons/fa6";
+import { motion } from "framer-motion";
+
+const MotionImage = motion(Image);
 
 interface QRCodeScannerProps {
   onScan: (data: string) => void;
@@ -159,7 +162,8 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-auto bg-dark-gray  disabled:cursor-not-allowed w-full p-6 sticky bottom-0 text-left text-white text-3xl font-semibold">
+        {/* <div className="flex items-center justify-between mt-auto bg-dark-gray  disabled:cursor-not-allowed w-full p-6 sticky bottom-0 text-left text-white text-3xl font-semibold"> */}
+        <div className="relative">
           <Transaction
             onError={handleReset}
             chainId={baseSepolia.id}
@@ -167,23 +171,34 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
             onStatus={handleAddTrip}
           >
             {!!isUserRegistered && <>
-              {isLoading ? (
-                "Loading..."
-              ) : (
-                <>
-                  {boardingPassData ? (
-                    <TransactionButton
-                      disabled={isLoading || !addTripContracts}
-                      text="Add Trip"
-                      className="txn-btn disabled:cursor-not-allowed p-0"
-                    />
-                  ) : (
-                    <div >
-                      Scan to continue
-                    </div>
-                  )}
-                </>
-              )}
+              <>
+                {boardingPassData ? (
+                  <TransactionButton
+                    disabled={isLoading || !addTripContracts}
+                    text={
+                      <div className="flex items-center justify-between w-full flex-1">
+                        <label className="flex-1">Add Trip</label>
+                        <MotionImage
+                          className="aspect-square h-14 w-14 float-right"
+                          src="/svg/airplane.svg"
+                          width={88}
+                          height={88}
+                          initial={{ x: 0 }}
+                          animate={{ x: isLoading ? 100 : 0 }}
+                          alt="airplane icon"
+                        />
+                      </div> as any
+                    }
+                    className={cn("txn-btn disabled:cursor-not-allowed p-0")}
+                  />
+                ) : (
+                  <div
+                    className="flex items-center justify-between mt-auto bg-dark-gray  disabled:cursor-not-allowed w-full p-6 sticky bottom-0 text-left text-white text-3xl font-semibold"
+                  >
+                    Scan to continue
+                  </div>
+                )}
+              </>
             </>}
           </Transaction>
 
@@ -196,18 +211,31 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
 
             {!isUserRegistered && <TransactionButton
               disabled={isLoading || !addTripContracts}
-              text="Register to the contract"
-              className="txn-btn disabled:cursor-not-allowed p-0"
+              text={
+                <div className="flex items-center justify-between w-full flex-1">
+                  <label className="flex-1">Register</label>
+                  <MotionImage
+                    className="aspect-square h-14 w-14"
+                    src="/svg/airplane.svg"
+                    width={88}
+                    height={88}
+                    initial={{ x: 0 }}
+                    animate={{ x: isLoading ? 100 : 0 }}
+                    alt="airplane icon"
+                  />
+                </div> as any
+              }
+              className={cn("txn-btn disabled:cursor-not-allowed p-0")}
             />}
           </Transaction>
+
         </div>
-        <Image
-          src="/svg/airplane.svg"
-          width={88}
-          height={88}
-          alt="airplane icon"
-        />
+
+
+        {/* </div> */}
+
       </div>
+
     </div>
   );
 };

@@ -69,8 +69,8 @@
 }
 
 .txn-btn {
-  @apply !bg-transparent ;
+  @apply flex items-center justify-between mt-auto bg-dark-gray  disabled:cursor-not-allowed w-full p-6 sticky bottom-0 text-left text-3xl font-semibold rounded-none focus:bg-dark-gray
 }
 .txn-btn span {
-  @apply !text-left !text-3xl !text-white !font-semibold ;
+  @apply !text-left !text-3xl !text-white !font-semibold w-full block;
 }
