@@ -62,7 +62,7 @@ const LoginScreen = () => {
                 <div
                     className="text-lg text-white whitespace-nowrap font-mono font-medium"
                 >
-                    <Marquee pauseOnHover className="[--duration:20s]">
+                    <Marquee pauseOnHover className="[--duration:60s]">
                         CASH IN, $CRASH OUT. 747 AIRLINES DESTINATIONS. YOU DON&apos;T
                         KNOW WHERE YOU&apos;RE GOING, BUT WE DO. CASH IN, $CRASH OUT. 747
                         THE WORLD OVER. AND OV
