@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 
 import '@coinbase/onchainkit/styles.css';
 import '@rainbow-me/rainbowkit/styles.css';
-import "./globals.css";
+import "../globals.css";
 
 import ConnectWalletPopup from "@/components/ConnectWalletPopup";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,7 +18,7 @@ const OnchainProviders = dynamic(
 );
 
 import dynamic from "next/dynamic";
-import { abcGravity } from "./fonts";
+import { abcGravity } from "../fonts";
 
 export const metadata: Metadata = {
   title: "Air Miles PWA",

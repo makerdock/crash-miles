@@ -1,72 +1,40 @@
-// app/lib/contractInteractions.ts
-import { ethers } from "ethers";
-import { readContract, writeContract } from "wagmi/actions";
-import { connectors, useWagmiConfig } from "./wagmi";
-import { CONTRACT_ABI } from "./contractABI";
-import { createConfig, http } from "wagmi";
-import { baseSepolia } from "viem/chains";
+import { useState, useCallback } from 'react';
+import { usePublicClient, useWalletClient } from 'wagmi';
+import { CONTRACT_ABI } from './contractABI';
+import { ethers } from 'ethers';
 
-const config = createConfig({
-  chains: [baseSepolia],
-  multiInjectedProviderDiscovery: false,
-  connectors: connectors,
-  ssr: true,
-  transports: {
-    [baseSepolia.id]: http(),
-  },
-});
 export const CONTRACT_ADDRESS = "0xc1d0ff567399b16deab4ef337fc9c9ef678e4840";
 
-class ContractInteraction {
-  private contract: ethers.Contract | null = null;
-  private signer: ethers.Signer | null = null;
+export const useContractInteraction = () => {
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
+  const [isConnected, setIsConnected] = useState(false);
 
-  async connect() {
-    if (typeof (window as any).ethereum !== "undefined") {
-      try {
-        await (window as any).ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        const provider = new ethers.providers.Web3Provider(
-          (window as any).ethereum
-        );
-        this.signer = provider.getSigner();
-        this.contract = new ethers.Contract(
-          CONTRACT_ADDRESS,
-          CONTRACT_ABI,
-          this.signer
-        );
-        console.log(
-          ":rocket: ~ ContractInteraction ~ connect ~ this.contract:",
-          this.contract
-        );
-      } catch (error) {
-        console.error("Failed to connect to Ethereum:", error);
-        throw error;
-      }
+  const connect = useCallback(async () => {
+    if (walletClient) {
+      setIsConnected(true);
     } else {
-      throw new Error("Ethereum provider not found");
+      throw new Error("Wallet not connected");
     }
-  }
+  }, [walletClient]);
 
-  async addProof(userAddress: string, proofHash: string, signalHash: string) {
+  const addProof = useCallback(async (userAddress: string, proofHash: string, signalHash: string) => {
+    if (!walletClient) throw new Error("Wallet not connected");
     try {
-      const tx = (await writeContract(config, {
-        abi: CONTRACT_ABI,
+      const hash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS,
-        functionName: "addProof",
+        abi: CONTRACT_ABI,
+        functionName: 'addProof',
         args: [userAddress, proofHash, signalHash],
-      })) as any;
-
-      await tx.wait();
-      return tx.hash;
+      });
+      return hash;
     } catch (error) {
       console.error("Failed to add proof:", error);
       throw error;
     }
-  }
+  }, [walletClient]);
 
-  async addTrip(
+  const addTrip = useCallback(async (
     userAddress: string,
     startTime: number,
     endTime: number,
@@ -74,83 +42,74 @@ class ContractInteraction {
     departureAirport: string,
     arrivalAirport: string,
     flightNumber: string
-  ) {
+  ) => {
+    if (!walletClient) throw new Error("Wallet not connected");
     try {
-      const tx = (await writeContract(config, {
-        abi: CONTRACT_ABI,
+      const hash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS,
-        functionName: "addTrip",
+        abi: CONTRACT_ABI,
+        functionName: 'addTrip',
         args: [
           userAddress,
-          startTime,
-          endTime,
+          BigInt(startTime),
+          BigInt(endTime),
           miles,
           ethers.utils.formatBytes32String(departureAirport),
           ethers.utils.formatBytes32String(arrivalAirport),
           ethers.utils.formatBytes32String(flightNumber),
         ],
-      })) as any;
-
-      await tx.wait();
-      return tx.hash;
+      });
+      return hash;
     } catch (error) {
       console.error("Failed to add trip:", error);
       throw error;
     }
-  }
+  }, [walletClient]);
 
-  async getProof(userAddress: string) {
+  const getProof = useCallback(async (userAddress: string) => {
     try {
-      const [proofHash, signalHash, timestamp] = (await readContract(config, {
-        abi: CONTRACT_ABI,
+      const result = await publicClient?.readContract({
         address: CONTRACT_ADDRESS,
-        functionName: "getProof",
+        abi: CONTRACT_ABI,
+        functionName: 'getProof',
         args: [userAddress],
-      })) as any;
-
-      return { proofHash, signalHash, timestamp: timestamp.toNumber() };
+      });
+      const [proofHash, signalHash, timestamp] = result as [string, string, bigint];
+      return { proofHash, signalHash, timestamp: Number(timestamp) };
     } catch (error) {
       console.error("Failed to get proof:", error);
       throw error;
     }
-  }
+  }, [publicClient]);
 
-  async getTripCount(userAddress: string): Promise<number> {
+  const getTripCount = useCallback(async (userAddress: string): Promise<number> => {
     try {
-      const count = (await readContract(config, {
-        abi: CONTRACT_ABI,
+      const result = await publicClient?.readContract({
         address: CONTRACT_ADDRESS,
-        functionName: "getTripCount",
+        abi: CONTRACT_ABI,
+        functionName: 'getTripCount',
         args: [userAddress],
-      })) as any;
-
-      return count.toNumber();
+      });
+      return Number(result);
     } catch (error) {
       console.error("Failed to get trip count:", error);
       throw error;
     }
-  }
+  }, [publicClient]);
 
-  async getTrip(userAddress: string, index: number) {
+  const getTrip = useCallback(async (userAddress: string, index: number) => {
     try {
-      const [
-        startTime,
-        endTime,
-        miles,
-        departureAirport,
-        arrivalAirport,
-        flightNumber,
-      ] = (await readContract(config, {
-        abi: CONTRACT_ABI,
+      const result = await publicClient?.readContract({
         address: CONTRACT_ADDRESS,
-        functionName: "getTrip",
+        abi: CONTRACT_ABI,
+        functionName: 'getTrip',
         args: [userAddress, index],
-      })) as any;
-
+      });
+      const [startTime, endTime, miles, departureAirport, arrivalAirport, flightNumber] = result as [bigint, bigint, bigint, string, string, string];
       return {
-        startTime: startTime.toNumber(),
-        endTime: endTime.toNumber(),
-        miles: miles.toNumber(),
+        startTime: Number(startTime),
+        endTime: Number(endTime),
+        miles: Number(miles),
         departureAirport: ethers.utils.parseBytes32String(departureAirport),
         arrivalAirport: ethers.utils.parseBytes32String(arrivalAirport),
         flightNumber: ethers.utils.parseBytes32String(flightNumber),
@@ -159,37 +118,46 @@ class ContractInteraction {
       console.error("Failed to get trip:", error);
       throw error;
     }
-  }
+  }, [publicClient]);
 
-  async getTotalMiles(userAddress: string): Promise<number> {
+  const getTotalMiles = useCallback(async (userAddress: string): Promise<number> => {
     try {
-      const miles = (await readContract(config, {
-        abi: CONTRACT_ABI,
+      const result = await publicClient?.readContract({
         address: CONTRACT_ADDRESS,
-        functionName: "getTotalMiles",
+        abi: CONTRACT_ABI,
+        functionName: 'getTotalMiles',
         args: [userAddress],
-      })) as any;
-
-      return miles.toNumber();
+      });
+      return Number(result);
     } catch (error) {
       console.error("Failed to get total miles:", error);
       throw error;
     }
-  }
+  }, [publicClient]);
 
-  async isUserRegistered(userAddress: string): Promise<boolean> {
+  const isUserRegistered = useCallback(async (userAddress: string): Promise<boolean> => {
     try {
-      return (await readContract(config, {
-        abi: CONTRACT_ABI,
+      return await publicClient?.readContract({
         address: CONTRACT_ADDRESS,
-        functionName: "isUserRegistered",
+        abi: CONTRACT_ABI,
+        functionName: 'isUserRegistered',
         args: [userAddress],
-      })) as any;
+      }) as boolean;
     } catch (error) {
       console.error("Failed to check user registration:", error);
       throw error;
     }
-  }
-}
+  }, [publicClient]);
 
-export const contractInteraction = new ContractInteraction();
+  return {
+    isConnected,
+    connect,
+    addProof,
+    addTrip,
+    getProof,
+    getTripCount,
+    getTrip,
+    getTotalMiles,
+    isUserRegistered,
+  };
+};
