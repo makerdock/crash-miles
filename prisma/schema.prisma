@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+}
+
+model Trip {
+  id               Int      @id @default(autoincrement())
+  useraddress      String   @db.VarChar(42)
+  arrivalairport   String   @db.VarChar(255)
+  departureairport String   @db.VarChar(255)
+  flightnumber     String   @db.VarChar(20)
+  miles            Int
+  date             String   @db.VarChar(20)
+  startTime        DateTime
+  endTime          DateTime
+  createdAt        DateTime @default(now())
+}

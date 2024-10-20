@@ -4,8 +4,7 @@ import {
   metaMaskWallet,
   rainbowWallet,
 } from "@rainbow-me/rainbowkit/wallets";
-import { useMemo } from "react";
-import { http, createConfig } from "wagmi";
+import { createConfig, http } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 
 const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID;

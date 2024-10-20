@@ -1,9 +1,11 @@
+import { getHost } from "./getHost";
+
 // Initialize the database
 export async function initializeDatabase() {
   try {
     const res = await fetch(
       process.env.NEXT_PUBLIC_URL ??
-        "http://localhost:3000" + "/api/db/initiate"
+      "http://localhost:3000" + "/api/db/initiate"
     );
     const data: any = await res.json();
   } catch (error) {
@@ -18,7 +20,7 @@ export type Trip = {
   userAddress: string;
   arrivalAirport: string;
   departureAirport: string;
-  date:string;
+  date: string;
   flightNumber: string;
   miles: number;
 };
@@ -32,7 +34,7 @@ export async function addTrip(trip: Trip): Promise<TripResponse> {
   try {
     const response = await fetch(
       process.env.NEXT_PUBLIC_URL ??
-        "http://localhost:3000" + "/api/db/addTrip",
+      "http://localhost:3000" + "/api/db/addTrip",
       {
         method: "POST",
         headers: {
@@ -60,9 +62,8 @@ export async function getTripsForUser(
 ): Promise<TripResponse[]> {
   try {
     const response = await fetch(
-      process.env.NEXT_PUBLIC_URL ??
-        "http://localhost:3000" +
-          `/api/db/get-trips?userAddress=${encodeURIComponent(userAddress)}`,
+      getHost() +
+      `/api/db/get-trips?userAddress=${encodeURIComponent(userAddress)}`,
       {
         method: "GET",
         headers: {

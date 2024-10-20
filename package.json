@@ -11,6 +11,7 @@
   "dependencies": {
     "@coinbase/onchainkit": "^0.33.6",
     "@coinbase/wallet-sdk": "^4.1.0",
+    "@prisma/client": "5.21.1",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.1",
@@ -32,7 +33,7 @@
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "usehooks-ts": "^3.1.0",
-    "viem": "2.x",
+    "viem": "^2.21.30",
     "wagmi": "^2.12.17",
     "zod": "^3.23.8",
     "zustand": "5.0.0-rc.2"
@@ -44,6 +45,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8",
+    "prisma": "5.21.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

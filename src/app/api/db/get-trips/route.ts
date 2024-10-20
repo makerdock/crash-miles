@@ -1,16 +1,6 @@
+import { db } from "@/server/db";
 import { sql } from "@vercel/postgres";
 import { NextRequest, NextResponse } from "next/server";
-
-type Trip = {
-  id: number;
-  userAddress: string;
-  arrivalAirport: string;
-  departureAirport: string;
-  endTime: number;
-  startTime: number;
-  flightNumber: string;
-  miles: number;
-};
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -24,13 +14,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await sql<Trip>`
-      SELECT * FROM Trip 
-      WHERE userAddress = ${userAddress} 
-      ORDER BY startTime DESC;
-    `;
+    const trips = await db.trip.findMany({
+      where: {
+        useraddress: userAddress,
+      },
+    });
 
-    return new NextResponse(JSON.stringify(result.rows), {
+    return NextResponse.json({ trips }, {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

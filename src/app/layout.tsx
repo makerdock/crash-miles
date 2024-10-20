@@ -27,12 +27,15 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <OnchainProviders>
-          <div className="min-h-[100dvh] flex flex-col justify-center min-w-full w-full ">
+          <div className="min-h-[100dvh] flex flex-col justify-center min-w-full w-full md:hidden visible ">
             {children}
             <Toaster />
           </div>
           <ConnectWalletPopup />
         </OnchainProviders>
+        <div className="fixed top-0 left-0 md:h-[100dvh] w-full bg-white z-50 flex flex-col justify-center px-4 h-0 overflow-hidden">
+          <h1 className="text-4xl text-center">Please use mobile for best experience</h1>
+        </div>
       </body>
     </html>
   );
