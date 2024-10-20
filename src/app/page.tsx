@@ -7,7 +7,6 @@ import { useAccount } from "wagmi";
 
 export default function Home() {
   const { address, isConnecting, ...rest } = useAccount();
-  console.log("🚀 ~ Home ~ address:", address, rest)
 
   return (
     <main>

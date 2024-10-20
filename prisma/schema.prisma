@@ -17,4 +17,5 @@ model Trip {
   miles            Int
   startTime        DateTime
   createdAt        DateTime @default(now())
+  txnhash          String
 }

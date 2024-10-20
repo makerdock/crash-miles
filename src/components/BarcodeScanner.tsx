@@ -1,28 +1,26 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import { insertTrip, TripInput } from "@/actions/insertTrip";
 import { useToast } from "@/components/ui/use-toast";
 import useGetTrips from "@/hooks/useGetTrips";
+import { adjustFlightDate } from "@/lib/adjustFlightDate";
 import {
   BoardingPassResponse,
   getBoardingPassData,
 } from "@/lib/boardingPassApi";
 import { CONTRACT_ABI } from "@/lib/contractABI";
 import { CONTRACT_ADDRESS } from "@/lib/contractInteraction";
-import { addTrip, TripResponse } from "@/lib/db";
 import { generateZKProof, verifyZKProof } from "@/lib/zkProofs";
 import { Avatar } from "@coinbase/onchainkit/identity";
 import { LifecycleStatus } from "@coinbase/onchainkit/transaction";
-import { ToastAction } from "@radix-ui/react-toast";
 import { ethers } from "ethers";
 import Image from "next/image";
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { RxAvatar } from "react-icons/rx";
 import { useAccount, useReadContract } from "wagmi";
 import QRCodeScanner from "./QRCodeScanner";
 import WalletConnection from "./WalletConnection";
-import { adjustFlightDate } from "@/lib/adjustFlightDate";
-import { insertTrip, TripInput } from "@/actions/insertTrip";
+import { Trip } from "@prisma/client";
+import { formatDate } from "@/lib/formatDate";
 
 export default function BoardingPassScanner() {
   const { address: userAddress } = useAccount();
@@ -48,6 +46,7 @@ export default function BoardingPassScanner() {
   const { toast } = useToast();
 
   const userTrips = useGetTrips();
+  console.log("🚀 ~ BoardingPassScanner ~ userTrips:", userTrips.data)
 
   // gets the boarding pass data and verify it and returns proof hashes
   const handleVerification = async () => {
@@ -117,34 +116,36 @@ export default function BoardingPassScanner() {
 
         const sanitisedFlightDate = boardingPassData?.data.legs[0].flightDate && adjustFlightDate(boardingPassData?.data.legs[0].flightDate).toISOString()
 
+        const flightNumber = boardingPassData.data.legs[0].operatingCarrierDesignator + boardingPassData.data.legs[0].flightNumber
+
         const trip: TripInput = {
           arrivalAirport: boardingPassData?.data.legs[0].arrivalAirport,
           departureAirport: boardingPassData?.data.legs[0].departureAirport,
-          flightNumber: boardingPassData?.data.legs[0].flightNumber,
+          flightNumber,
           miles: 100,
-
           userAddress: userAddress as `0x${string}`,
           date: sanitisedFlightDate,
           pnr: boardingPassData?.data.legs[0].operatingCarrierPNR,
+          txnHash: txn,
         };
         const newTripId = await insertTrip(trip);
 
         console.log("trip added successfully with id : ", newTripId);
 
-        toast({
-          title: "Success",
-          description: "Trip added successfully",
-          action: (
-            <Link
-              target="_blank"
-              href={`https://sepolia.basescan.org/tx/${txn}`}
-            >
-              <ToastAction altText="Check it on etherscan">
-                <Button>Check it on Etherscan</Button>
-              </ToastAction>
-            </Link>
-          ),
-        });
+        // toast({
+        //   title: "Success",
+        //   description: "Trip added successfully",
+        //   action: (
+        //     <Link
+        //       target="_blank"
+        //       href={`https://sepolia.basescan.org/tx/${txn}`}
+        //     >
+        //       <ToastAction altText="Check it on etherscan">
+        //         <Button>Check it on Etherscan</Button>
+        //       </ToastAction>
+        //     </Link>
+        //   ),
+        // });
         setIsLoading(false);
       } else if (lifeCycleRes.statusName === "error") {
         console.log("🚀 ~ handleAddTrip ~ lifeCycleRes:", lifeCycleRes)
@@ -214,6 +215,10 @@ export default function BoardingPassScanner() {
     setScannedData("");
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    userTrips.refetch();
+  }, [txnHash])
 
 
   return (
@@ -290,7 +295,7 @@ export default function BoardingPassScanner() {
               <Image src="/svg/stamp.svg" width={60} height={70} alt="Stamp" />
             </button>
 
-            {!userTrips?.isLoading && !!userTrips.data?.length && <div>
+            {!userTrips?.isLoading && !!userTrips.data?.trips?.length && <div>
               <p className="text-black text-lg font-bold mb-4 mt-9 uppercase">
                 Logged Flights
               </p>
@@ -299,33 +304,32 @@ export default function BoardingPassScanner() {
                   "Trips Loading..."
                 ) : (
                   <>
-                    {!userTrips ||
-                      !userTrips.data ||
-                      userTrips.data.length === 0 ? (
-                      <>
-                        <span className="text-black self-center text-lg font-medium">
-                          No Flights Logged Yet!
-                        </span>
-                        <button
-                          className="text-blue-800 font-semibold text-sm underline bg-transparent border-0 focus:border-0 focus:outline-none focus:ring-0"
-                          onClick={() => setIsScannerOpen(true)}
-                        >
-                          Start Scanning
-                        </button>
-                      </>
-                    ) : (
-                      userTrips.data.map((trip: TripResponse) => (
-                        <FlightCard
-                          key={trip.id}
-                          from={trip.departureAirport}
-                          to={trip.arrivalAirport}
-                          flightNumber={trip.flightNumber}
-                          date={trip.date}
-                          miles={trip.miles.toString()}
-                          highMiles={(trip.miles * 0.1).toString()} // Example calculation for highMiles
-                        />
-                      ))
-                    )}
+                    {
+                      !userTrips.data?.trips.length ? (
+                        <>
+                          <span className="text-black self-center text-lg font-medium">
+                            No Flights Logged Yet!
+                          </span>
+                          <button
+                            className="text-blue-800 font-semibold text-sm underline bg-transparent border-0 focus:border-0 focus:outline-none focus:ring-0"
+                            onClick={() => setIsScannerOpen(true)}
+                          >
+                            Start Scanning
+                          </button>
+                        </>
+                      ) : (
+                        userTrips.data?.trips?.map((trip: Trip) => (
+                          <FlightCard
+                            key={trip.id}
+                            from={trip.departureairport}
+                            to={trip.arrivalairport}
+                            flightNumber={trip.flightnumber}
+                            date={formatDate(new Date(trip.createdAt))}
+                            miles={trip.miles}
+                            highMiles={(trip.miles * 0.1).toString()} // Example calculation for highMiles
+                          />
+                        ))
+                      )}
                   </>
                 )}
               </div>
@@ -342,7 +346,7 @@ interface FlightCardProps {
   to: string;
   flightNumber: string;
   date: string;
-  miles: string;
+  miles: number;
   highMiles: string;
 }
 
@@ -354,15 +358,14 @@ const FlightCard: React.FC<FlightCardProps> = ({
   miles,
   highMiles,
 }) => (
-  <div className="bg-white rounded-[10px] pt-6 pb-5 pr-4 pl-7 border border-light-blue flex justify-between items-center">
+  <div className="bg-white rounded-[10px] p-6 border border-light-blue flex justify-between items-center">
     <div>
       <p className=" text-dark-gray text-lg md:text-2xl font-normal">
         {from} - {to}
       </p>
-      <p className=" text-sm md:text-lg  text-dark-gray font-bold">
-        {flightNumber}
+      <p className=" text-sm md:text-base text-gray/45 font-normal">
+        <span>{flightNumber}</span> | <span className="capitalize">{date}</span>
       </p>
-      <p className="text-xs md:text-base text-gray/45 font-normal">{date}</p>
     </div>
     <div className="flex items-center gap-3">
       <div className="text-right">
@@ -370,15 +373,9 @@ const FlightCard: React.FC<FlightCardProps> = ({
           {miles} Miles Flown
         </p>
         <p className="text-primary-blue md:text-lg text-sm font-normal">
-          +{highMiles} HighMiles
+          +{Number(highMiles).toFixed(2)} HighMiles
         </p>
       </div>
-      <Image
-        src="/svg/arrow-right.svg"
-        width={20}
-        height={18}
-        alt="arrow-right icon"
-      />
     </div>
   </div>
 );

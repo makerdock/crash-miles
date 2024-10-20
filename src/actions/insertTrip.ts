@@ -1,6 +1,7 @@
 'use server'
 
 import { PrismaClient } from '@prisma/client'
+import { calculateMiles } from './calculateMiles';
 
 const prisma = new PrismaClient()
 
@@ -12,19 +13,24 @@ export interface TripInput {
     pnr: string;
     flightNumber: string;
     miles: number;
+    txnHash: string;
 }
 
 export async function insertTrip(data: TripInput) {
+    console.log("🚀 ~ insertTrip ~ data:", data)
+
     try {
+        const miles = await calculateMiles({ legs: [data] })
         const trip = await prisma.trip.create({
             data: {
                 useraddress: data.userAddress,
                 arrivalairport: data.arrivalAirport,
                 departureairport: data.departureAirport,
-                startTime: new Date(data.date), // Convert string to Date object
+                startTime: data.date,
                 flightnumber: data.flightNumber,
-                miles: data.miles,
-                pnr: data.pnr
+                miles: miles,
+                pnr: data.pnr,
+                txnhash: data.txnHash
             },
         })
 

@@ -1,25 +1,22 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { QrReader, OnResultFunction } from "react-qr-reader";
-import Image from "next/image";
+import {
+  BoardingPassResponse
+} from "@/lib/boardingPassApi";
+import { getAddProofContract, getAddTripContract } from "@/lib/contracts";
+import { cn, convertToValidArg } from "@/lib/utils";
 import {
   LifecycleStatus,
   Transaction,
   TransactionButton,
 } from "@coinbase/onchainkit/transaction";
-import { baseSepolia } from "viem/chains";
-import { getAddProofContract, getAddTripContract } from "@/lib/contracts";
-import { useAccount } from "wagmi";
-import {
-  BoardingPassResponse,
-  getBoardingPassData,
-} from "@/lib/boardingPassApi";
-import { cn, convertToValidArg } from "@/lib/utils";
-import BoardingPassContainer from "./BoardingPassContainer";
-import Link from "next/link";
-import { FaAnglesRight } from "react-icons/fa6";
 import { motion } from "framer-motion";
-import { adjustFlightDate } from "@/lib/adjustFlightDate";
+import Image from "next/image";
+import React, { useState } from "react";
+import { FaAnglesRight } from "react-icons/fa6";
+import { OnResultFunction, QrReader } from "react-qr-reader";
+import { baseSepolia } from "viem/chains";
+import { useAccount } from "wagmi";
+import BoardingPassContainer from "./BoardingPassContainer";
 
 const MotionImage = motion(Image);
 
@@ -54,7 +51,6 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   const [error, setError] = useState<null | string>(null);
 
   const handleScan: OnResultFunction = async (data, error) => {
-    console.log("🚀 ~ consthandleScan:OnResultFunction= ~ data:", data)
     if (data) {
       onScan(data.getText());
     }
