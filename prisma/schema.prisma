@@ -18,4 +18,6 @@ model Trip {
   startTime        DateTime
   createdAt        DateTime @default(now())
   txnhash          String
+
+  @@map("trip")
 }

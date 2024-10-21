@@ -1,4 +1,5 @@
 "use client";
+import getUserRank, { UserRankResponse } from "@/actions/getUserRank";
 import { insertTrip, TripInput } from "@/actions/insertTrip";
 import { useToast } from "@/components/ui/use-toast";
 import useGetTrips from "@/hooks/useGetTrips";
@@ -9,9 +10,11 @@ import {
 } from "@/lib/boardingPassApi";
 import { CONTRACT_ABI } from "@/lib/contractABI";
 import { CONTRACT_ADDRESS } from "@/lib/contractInteraction";
+import { formatDate } from "@/lib/formatDate";
 import { generateZKProof, verifyZKProof } from "@/lib/zkProofs";
 import { Avatar } from "@coinbase/onchainkit/identity";
 import { LifecycleStatus } from "@coinbase/onchainkit/transaction";
+import { Trip } from "@prisma/client";
 import { ethers } from "ethers";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
@@ -19,17 +22,18 @@ import { RxAvatar } from "react-icons/rx";
 import { useAccount, useReadContract } from "wagmi";
 import QRCodeScanner from "./QRCodeScanner";
 import WalletConnection from "./WalletConnection";
-import { Trip } from "@prisma/client";
-import { formatDate } from "@/lib/formatDate";
 
 export default function BoardingPassScanner() {
   const { address: userAddress } = useAccount();
+
   const { data: isUserRegistered, refetch } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: "isUserRegistered",
     args: [userAddress as any],
   });
+  const [userRank, setUserRank] = useState<UserRankResponse>()
+
   const [isLoading, setIsLoading] = useState(false);
   const [hashes, setHashes] = useState({
     proofHash: "",
@@ -216,9 +220,24 @@ export default function BoardingPassScanner() {
     setIsLoading(false);
   };
 
+  const fetchRank = async () => {
+    console.log("🚀 ~ fetchRank ~ fetchRank:")
+
+    try {
+      const data = await getUserRank(userAddress as string)
+      console.log("🚀 ~ fetchRank ~ data:", data)
+      if (!data) return
+      setUserRank(data)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   useEffect(() => {
     userTrips.refetch();
-  }, [txnHash])
+
+    fetchRank();
+  }, [txnHash, userAddress])
 
 
   return (
@@ -261,7 +280,7 @@ export default function BoardingPassScanner() {
                   EARNED
                 </div>
                 <div className="text-white text-[72px] md:text-[95px] italic font-[900] font-gravity">
-                  31,683
+                  {userRank?.totalMiles?.toString() || "0"}
                 </div>
               </div>
             </div>
@@ -269,12 +288,11 @@ export default function BoardingPassScanner() {
           <div className="bg-dark-blue flex justify-between items-start rounded-br-[100px] overflow-hidden relative p-7">
             <div className="flex flex-col">
               <p className="text-white text-sm md:text-lg font-bold">
-                MILLION MILER STATUS
+                MILLION MILER RANK
               </p>
               <p className="text-white text-2xl md:text-[55px] italic font-[900] font-gravity">
-                184,216
+                {userRank?.rank?.toString() || "0"}/{userRank?.totalPlayers?.toString() || "0"}
               </p>
-              <p className="text-white text-sm font-medium">All Miles Flown</p>
             </div>
             <Image
               src="/svg/waiting.svg"

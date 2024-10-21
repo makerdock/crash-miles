@@ -1,4 +1,4 @@
-import { Trip } from "@/lib/db";
+import { Trip } from "@prisma/client";
 import { sql } from "@vercel/postgres";
 import { NextRequest, NextResponse } from "next/server";
 
