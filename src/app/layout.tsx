@@ -18,7 +18,7 @@ import dynamic from "next/dynamic";
 import { abcGravity } from "../fonts";
 
 export const metadata: Metadata = {
-  title: "Air Miles PWA",
+  title: "High Miles PWA",
   description: "Track your air miles with blockchain and zero-knowledge proofs",
   manifest: "/manifest.json",
   icons: {
