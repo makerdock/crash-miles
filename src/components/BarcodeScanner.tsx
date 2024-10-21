@@ -1,37 +1,39 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
-import { ethers } from "ethers";
-import { Button } from "@/components/ui/button";
+import getUserRank, { UserRankResponse } from "@/actions/getUserRank";
+import { insertTrip, TripInput } from "@/actions/insertTrip";
 import { useToast } from "@/components/ui/use-toast";
-import { generateZKProof, verifyZKProof } from "@/lib/zkProofs";
-import {
-  CONTRACT_ADDRESS,
-  contractInteraction,
-} from "@/lib/contractInteraction";
+import useGetTrips from "@/hooks/useGetTrips";
+import { adjustFlightDate } from "@/lib/adjustFlightDate";
 import {
   BoardingPassResponse,
   getBoardingPassData,
 } from "@/lib/boardingPassApi";
-import QRCodeScanner from "./QRCodeScanner";
-import { ToastAction } from "@radix-ui/react-toast";
-import Link from "next/link";
-import { useAccount, usePublicClient, useReadContract } from "wagmi";
-import Image from "next/image";
 import { CONTRACT_ABI } from "@/lib/contractABI";
-import { LifecycleStatus } from "@coinbase/onchainkit/transaction";
-import WalletConnection from "./WalletConnection";
+import { CONTRACT_ADDRESS } from "@/lib/contractInteraction";
+import { formatDate } from "@/lib/formatDate";
+import { generateZKProof, verifyZKProof } from "@/lib/zkProofs";
 import { Avatar } from "@coinbase/onchainkit/identity";
+import { LifecycleStatus } from "@coinbase/onchainkit/transaction";
+import { Trip } from "@prisma/client";
+import { ethers } from "ethers";
+import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
 import { RxAvatar } from "react-icons/rx";
-import { useWagmiConfig } from "@/lib/wagmi";
+import { useAccount, useReadContract } from "wagmi";
+import QRCodeScanner from "./QRCodeScanner";
+import WalletConnection from "./WalletConnection";
 
 export default function BoardingPassScanner() {
   const { address: userAddress } = useAccount();
+
   const { data: isUserRegistered, refetch } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: "isUserRegistered",
     args: [userAddress as any],
   });
+  const [userRank, setUserRank] = useState<UserRankResponse>()
+
   const [isLoading, setIsLoading] = useState(false);
   const [hashes, setHashes] = useState({
     proofHash: "",
@@ -47,13 +49,10 @@ export default function BoardingPassScanner() {
   // `M1ASKREN/TEST         EA272SL ORDNRTUA 0881 007F002K0303 15C>3180 M6007BUA              2901624760758980 UA UA EY975897            *30600    09  UAG    ^160MEUCIQC1k/QcCEoSFjSivLo3RWiD3268l+OLdrFMTbTyMLRSbAIgb4JVCsWKx/h5HP7+sApYU6nwvM/70IKyUrX28SC+b94=`
   const { toast } = useToast();
 
-  // useEffect(() => {
-  //   contractInteraction.connect();
-  // }, []);
+  const userTrips = useGetTrips();
 
   // gets the boarding pass data and verify it and returns proof hashes
   const handleVerification = async () => {
-    console.log("calling generate proofs");
 
     if (!scannedData) {
       toast({
@@ -108,27 +107,45 @@ export default function BoardingPassScanner() {
   };
 
   const handleAddTrip = async (lifeCycleRes: LifecycleStatus) => {
-    if (txnHash) return;
+    if (txnHash || !boardingPassData) return;
     setIsLoading(true);
     try {
+
       if (lifeCycleRes.statusName === "success") {
         const txnReceipt = lifeCycleRes.statusData.transactionReceipts[0];
         const txn = txnReceipt.transactionHash;
         setTxnHash(txn);
-        toast({
-          title: "Success",
-          description: "Trip added successfully",
-          action: (
-            <Link
-              target="_blank"
-              href={`https://sepolia.basescan.org/tx/${txn}`}
-            >
-              <ToastAction altText="Check it on etherscan">
-                <Button>Check it on Etherscan</Button>
-              </ToastAction>
-            </Link>
-          ),
-        });
+
+        const sanitisedFlightDate = boardingPassData?.data.legs[0].flightDate && adjustFlightDate(boardingPassData?.data.legs[0].flightDate).toISOString()
+
+        const flightNumber = boardingPassData.data.legs[0].operatingCarrierDesignator + boardingPassData.data.legs[0].flightNumber
+
+        const trip: TripInput = {
+          arrivalAirport: boardingPassData?.data.legs[0].arrivalAirport,
+          departureAirport: boardingPassData?.data.legs[0].departureAirport,
+          flightNumber,
+          miles: 100,
+          userAddress: userAddress as `0x${string}`,
+          date: sanitisedFlightDate,
+          pnr: boardingPassData?.data.legs[0].operatingCarrierPNR,
+          txnHash: txn,
+        };
+        const newTripId = await insertTrip(trip);
+
+        // toast({
+        //   title: "Success",
+        //   description: "Trip added successfully",
+        //   action: (
+        //     <Link
+        //       target="_blank"
+        //       href={`https://sepolia.basescan.org/tx/${txn}`}
+        //     >
+        //       <ToastAction altText="Check it on etherscan">
+        //         <Button>Check it on Etherscan</Button>
+        //       </ToastAction>
+        //     </Link>
+        //   ),
+        // });
         setIsLoading(false);
       } else if (lifeCycleRes.statusName === "error") {
         toast({
@@ -186,7 +203,6 @@ export default function BoardingPassScanner() {
       !hashes.signalHash &&
       !isLoading
     ) {
-
       handleVerification();
     }
   }, [scannedData]);
@@ -197,6 +213,23 @@ export default function BoardingPassScanner() {
     setScannedData("");
     setIsLoading(false);
   };
+
+  const fetchRank = async () => {
+    try {
+      const data = await getUserRank(userAddress as string)
+      if (!data) return
+      setUserRank(data)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  useEffect(() => {
+    userTrips.refetch();
+
+    fetchRank();
+  }, [txnHash, userAddress])
+
 
   return (
     <main className="mx-auto w-full font-sans">
@@ -215,9 +248,9 @@ export default function BoardingPassScanner() {
           signalHash={hashes.signalHash}
         />
       ) : (
-        <div className="bg-light-gray text-white min-h-screen max-w-md w-full overflow-hidden mx-auto">
-          <div className="bg-dark-blue">
-            <div className="bg-primary-blue rounded-br-[100px] overflow-hidden pt-16 px-7 pb-14">
+        <div className="bg-light-gray text-white min-h-screen max-w-md w-full overflow-hidden mx-auto flex flex-col">
+          <div className="bg-dark-blue flex-1 flex flex-col">
+            <div className="bg-primary-blue rounded-br-[100px] overflow-hidden p-6 pb-14 min-h-full flex-1 flex flex-col">
               <div className="flex items-center mb-7 ">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mr-3">
                   <Avatar
@@ -229,22 +262,16 @@ export default function BoardingPassScanner() {
                   />
                 </div>
                 <div>
-                  {/* <div className=" text-white text-[22px] font-semibold">
-                    passenger.eth
-                  </div>
-                  <div className="text-white text-[22px] font-semibold">
-                    {userAddress && walletFormat(userAddress)}
-                  </div> */}
                   <WalletConnection />
                 </div>
               </div>
-              <div className="flex justify-between items-start flex-col gap- ">
+              <div className="flex flex-col justify-center items-start gap-1 flex-1">
                 <div className=" text-white text-xl md:text-[40px] italic font-[900]">
-                  HIGHMILES <br />
+                  HIGHMILES
                   EARNED
                 </div>
-                <div className="text-white text-[60px] md:text-[95px] italic font-[900]">
-                  31,683
+                <div className="text-white text-[72px] md:text-[95px] italic font-[900] font-gravity">
+                  {userRank?.totalMiles?.toString() || "0"}
                 </div>
               </div>
             </div>
@@ -252,12 +279,11 @@ export default function BoardingPassScanner() {
           <div className="bg-dark-blue flex justify-between items-start rounded-br-[100px] overflow-hidden relative p-7">
             <div className="flex flex-col">
               <p className="text-white text-sm md:text-lg font-bold">
-                MILLION MILER STATUS
+                MILLION MILER RANK
               </p>
-              <p className="text-white text-2xl md:text-[55px] italic font-[900]">
-                184,216
+              <p className="text-white text-2xl md:text-[55px] italic font-[900] font-gravity">
+                {userRank?.rank?.toString() || "0"}/{userRank?.totalPlayers?.toString() || "0"}
               </p>
-              <p className="text-white text-sm font-medium">All Miles Flown</p>
             </div>
             <Image
               src="/svg/waiting.svg"
@@ -267,7 +293,7 @@ export default function BoardingPassScanner() {
               className="absolute right-4 md:w-[180px] md:h-[180px] w-32 h-32"
             />
           </div>
-          <div className="bg-light-gray pt-6 px-7 overflow-hidden">
+          <div className="bg-light-gray p-6 overflow-hidden">
             <button
               className="bg-light-blue p-4 flex items-center w-full justify-between"
               onClick={() => setIsScannerOpen(true)}
@@ -277,52 +303,50 @@ export default function BoardingPassScanner() {
               </p>
               <Image src="/svg/stamp.svg" width={60} height={70} alt="Stamp" />
             </button>
-            <p className="text-black text-lg font-bold mb-4 mt-9 uppercase">
-              Logged Flights
-            </p>
-            <div className="flex flex-col gap-3 overflow-auto">
-              <FlightCard
-                from="DTW"
-                to="PHL"
-                flightNumber="DL1373"
-                date="Sep 29, 2024"
-                miles="2,219"
-                highMiles="400"
-              />
-              <FlightCard
-                from="DTW"
-                to="PHL"
-                flightNumber="DL1373"
-                date="Sep 29, 2024"
-                miles="2,219"
-                highMiles="400"
-              />
-              <FlightCard
-                from="DTW"
-                to="PHL"
-                flightNumber="DL1373"
-                date="Sep 29, 2024"
-                miles="2,219"
-                highMiles="400"
-              />
-            </div>
+
+            {!userTrips?.isLoading && !!userTrips.data?.trips?.length && <div>
+              <p className="text-black text-lg font-bold mb-4 mt-9 uppercase">
+                Logged Flights
+              </p>
+              <div className="flex flex-col gap-3 overflow-auto text-black">
+                {userTrips?.isLoading ? (
+                  "Trips Loading..."
+                ) : (
+                  <>
+                    {
+                      !userTrips.data?.trips.length ? (
+                        <>
+                          <span className="text-black self-center text-lg font-medium">
+                            No Flights Logged Yet!
+                          </span>
+                          <button
+                            className="text-blue-800 font-semibold text-sm underline bg-transparent border-0 focus:border-0 focus:outline-none focus:ring-0"
+                            onClick={() => setIsScannerOpen(true)}
+                          >
+                            Start Scanning
+                          </button>
+                        </>
+                      ) : (
+                        userTrips.data?.trips?.map((trip: Trip) => (
+                          <FlightCard
+                            key={trip.id}
+                            from={trip.departureairport}
+                            to={trip.arrivalairport}
+                            flightNumber={trip.flightnumber}
+                            date={formatDate(new Date(trip.createdAt))}
+                            miles={trip.miles}
+                            highMiles={(trip.miles * 0.1).toString()} // Example calculation for highMiles
+                          />
+                        ))
+                      )}
+                  </>
+                )}
+              </div>
+            </div>}
           </div>
         </div>
       )}
     </main>
-    // <div className="space-y-4 mt-4">
-    //   <div className="space-y-2">
-    //     <Label htmlFor="boardingPass">Boarding Pass Data</Label>
-    //     <QRCodeScanner onScan={setScannedData} />
-    //     <Input
-    //       id="boardingPass"
-    //       placeholder="Enter boarding pass data"
-    //       value={scannedData}
-    //       onChange={(e) => setScannedData(e.target.value)}
-    //     />
-    //   </div>
-    //   <Button onClick={handleScan}>Process Boarding Pass</Button>
-    // </div>
   );
 }
 
@@ -331,7 +355,7 @@ interface FlightCardProps {
   to: string;
   flightNumber: string;
   date: string;
-  miles: string;
+  miles: number;
   highMiles: string;
 }
 
@@ -343,15 +367,14 @@ const FlightCard: React.FC<FlightCardProps> = ({
   miles,
   highMiles,
 }) => (
-  <div className="bg-white rounded-[10px] pt-6 pb-5 pr-4 pl-7 border border-light-blue flex justify-between items-center">
+  <div className="bg-white rounded-[10px] p-6 border border-light-blue flex justify-between items-center">
     <div>
       <p className=" text-dark-gray text-lg md:text-2xl font-normal">
         {from} - {to}
       </p>
-      <p className=" text-sm md:text-lg  text-dark-gray font-bold">
-        {flightNumber}
+      <p className=" text-sm md:text-base text-gray/45 font-normal">
+        <span>{flightNumber}</span> | <span className="capitalize">{date}</span>
       </p>
-      <p className="text-xs md:text-base text-gray/45 font-normal">{date}</p>
     </div>
     <div className="flex items-center gap-3">
       <div className="text-right">
@@ -359,15 +382,9 @@ const FlightCard: React.FC<FlightCardProps> = ({
           {miles} Miles Flown
         </p>
         <p className="text-primary-blue md:text-lg text-sm font-normal">
-          +{highMiles} HighMiles
+          +{Number(highMiles).toFixed(2)} HighMiles
         </p>
       </div>
-      <Image
-        src="/svg/arrow-right.svg"
-        width={20}
-        height={18}
-        alt="arrow-right icon"
-      />
     </div>
   </div>
 );
