@@ -50,11 +50,9 @@ export default function BoardingPassScanner() {
   const { toast } = useToast();
 
   const userTrips = useGetTrips();
-  console.log("🚀 ~ BoardingPassScanner ~ userTrips:", userTrips.data)
 
   // gets the boarding pass data and verify it and returns proof hashes
   const handleVerification = async () => {
-    console.log("calling generate proofs");
 
     if (!scannedData) {
       toast({
@@ -134,8 +132,6 @@ export default function BoardingPassScanner() {
         };
         const newTripId = await insertTrip(trip);
 
-        console.log("trip added successfully with id : ", newTripId);
-
         // toast({
         //   title: "Success",
         //   description: "Trip added successfully",
@@ -152,7 +148,6 @@ export default function BoardingPassScanner() {
         // });
         setIsLoading(false);
       } else if (lifeCycleRes.statusName === "error") {
-        console.log("🚀 ~ handleAddTrip ~ lifeCycleRes:", lifeCycleRes)
         toast({
           title: "Error",
           description: lifeCycleRes.statusData.message,
@@ -174,7 +169,6 @@ export default function BoardingPassScanner() {
   };
 
   const handleAddProof = useCallback((status: LifecycleStatus) => {
-    console.log("🚀 ~ handleAddProof ~ status:", status)
     if (isUserRegistered) return;
     if (status.statusName === "success") {
       toast({ title: "Proof added successfully ✅" });
@@ -221,11 +215,8 @@ export default function BoardingPassScanner() {
   };
 
   const fetchRank = async () => {
-    console.log("🚀 ~ fetchRank ~ fetchRank:")
-
     try {
       const data = await getUserRank(userAddress as string)
-      console.log("🚀 ~ fetchRank ~ data:", data)
       if (!data) return
       setUserRank(data)
     } catch (error) {

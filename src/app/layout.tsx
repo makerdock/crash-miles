@@ -42,7 +42,7 @@ export default function RootLayout({
           <ConnectWalletPopup />
         </OnchainProviders>
         <div className="fixed top-0 left-0 md:h-[100dvh] w-full bg-white z-50 flex flex-col justify-center px-4 h-0 overflow-hidden">
-          <h1 className="text-4xl text-center">Please use mobile for best experience</h1>
+          <h1 className="text-4xl text-center font-gravity italic max-w-lg mx-auto uppercase">Please use mobile to try this out</h1>
         </div>
       </body>
     </html>

@@ -2,12 +2,12 @@
 import { sql } from "@vercel/postgres";
 
 export interface UserRankResponse {
-    totalPlayers: number;
-    rank: number;
-    totalMiles: number
+  totalPlayers: number;
+  rank: number;
+  totalMiles: number
 }
 async function getUserRank(userAddress: string): Promise<UserRankResponse | null> {
-    const result = await sql`
+  const result = await sql`
     WITH RankedUsers AS (
       SELECT 
         useraddress,
@@ -25,17 +25,16 @@ async function getUserRank(userAddress: string): Promise<UserRankResponse | null
     CROSS JOIN TotalPlayers tp
     WHERE ru.useraddress = ${userAddress}
   `;
-    console.log("🚀 ~ getUserRank ~ result:", result)
 
-    if (result.rows.length === 0) {
-        return null;
-    }
+  if (result.rows.length === 0) {
+    return null;
+  }
 
-    return {
-        rank: Number(result.rows[0].rank),
-        totalMiles: Number(result.rows[0].total_miles),
-        totalPlayers: Number(result.rows[0].total_players)
-    };
+  return {
+    rank: Number(result.rows[0].rank),
+    totalMiles: Number(result.rows[0].total_miles),
+    totalPlayers: Number(result.rows[0].total_players)
+  };
 }
 
 export default getUserRank;

@@ -17,8 +17,6 @@ export interface TripInput {
 }
 
 export async function insertTrip(data: TripInput) {
-    console.log("🚀 ~ insertTrip ~ data:", data)
-
     try {
         const miles = await calculateMiles({ legs: [data] })
         const trip = await prisma.trip.create({
@@ -34,7 +32,6 @@ export async function insertTrip(data: TripInput) {
             },
         })
 
-        console.log(`New trip inserted with ID: ${trip.id}`)
         return { success: true, id: trip.id };
     } catch (error) {
         console.error("Failed to insert trip:", error)
