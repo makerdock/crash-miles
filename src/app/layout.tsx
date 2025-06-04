@@ -21,6 +21,22 @@ export const metadata: Metadata = {
   icons: {
     icon: "https://devfolio.co/_next/image?url=https%3A%2F%2Fassets.devfolio.co%2Fhackathons%2F8b6f3a95cc864974be1aa571c378cd5b%2Fprojects%2Ff7932edc4a2e426aa83a2c0c62873fbf%2F623eac18-9a2d-4c8c-bf99-69a0bea0dbdc.jpeg&w=768&q=75",
   },
+  other: {
+    "fc:frame": JSON.stringify({
+      version: "next",
+      imageUrl: "https://devfolio.co/_next/image?url=https%3A%2F%2Fassets.devfolio.co%2Fhackathons%2F8b6f3a95cc864974be1aa571c378cd5b%2Fprojects%2Ff7932edc4a2e426aa83a2c0c62873fbf%2F623eac18-9a2d-4c8c-bf99-69a0bea0dbdc.jpeg&w=768&q=75",
+      button: {
+        title: "✈️ High Miles",
+        action: {
+          type: "launch_frame",
+          name: "High Miles - Blockchain Air Miles Tracker",
+          url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+          splashImageUrl: "https://devfolio.co/_next/image?url=https%3A%2F%2Fassets.devfolio.co%2Fhackathons%2F8b6f3a95cc864974be1aa571c378cd5b%2Fprojects%2Ff7932edc4a2e426aa83a2c0c62873fbf%2F623eac18-9a2d-4c8c-bf99-69a0bea0dbdc.jpeg&w=768&q=75",
+          splashBackgroundColor: "#1e40af"
+        }
+      }
+    })
+  }
 };
 
 export default function RootLayout({

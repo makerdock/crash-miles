@@ -21,6 +21,46 @@ import { RxAvatar } from "react-icons/rx";
 import { useAccount, useReadContract } from "wagmi";
 import QRCodeScanner from "./QRCodeScanner";
 import WalletConnection from "./WalletConnection";
+// @ts-ignore
+import { sdk } from "@farcaster/frame-sdk";
+
+// UserProfile component for better organization
+interface UserProfileProps {
+  farcasterUser: {
+    fid?: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+  } | null;
+}
+
+const UserProfile: React.FC<UserProfileProps> = ({ farcasterUser }) => (
+  <div className="flex items-center mb-7">
+    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mr-3 overflow-hidden">
+      {farcasterUser?.pfpUrl ? (
+        <img
+          src={farcasterUser.pfpUrl}
+          alt="Profile"
+          width={48}
+          height={48}
+          className="w-full h-full object-cover rounded-full"
+        />
+      ) : (
+        <RxAvatar className="text-blue-600 h-10 w-10 mx-auto my-auto" />
+      )}
+    </div>
+    <div className="flex flex-col">
+      <div className="text-white font-semibold text-lg">
+        {farcasterUser?.displayName || "User"}
+      </div>
+      {farcasterUser?.username && (
+        <div className="text-blue-100 text-sm">
+          @{farcasterUser.username}
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 export default function BoardingPassScanner() {
   const { address: userAddress } = useAccount();
@@ -31,7 +71,13 @@ export default function BoardingPassScanner() {
     functionName: "isUserRegistered",
     args: [userAddress as any],
   });
-  const [userRank, setUserRank] = useState<UserRankResponse>()
+  const [userRank, setUserRank] = useState<UserRankResponse>();
+  const [farcasterUser, setFarcasterUser] = useState<{
+    fid?: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+  } | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [hashes, setHashes] = useState({
@@ -115,9 +161,9 @@ export default function BoardingPassScanner() {
         const txn = txnReceipt.transactionHash;
         setTxnHash(txn);
 
-        const sanitisedFlightDate = boardingPassData?.data.legs[0].flightDate && adjustFlightDate(boardingPassData?.data.legs[0].flightDate).toISOString()
+        const sanitisedFlightDate = boardingPassData?.data.legs[0].flightDate && adjustFlightDate(boardingPassData?.data.legs[0].flightDate).toISOString();
 
-        const flightNumber = boardingPassData.data.legs[0].operatingCarrierDesignator + boardingPassData.data.legs[0].flightNumber
+        const flightNumber = boardingPassData.data.legs[0].operatingCarrierDesignator + boardingPassData.data.legs[0].flightNumber;
 
         const trip: TripInput = {
           arrivalAirport: boardingPassData?.data.legs[0].arrivalAirport,
@@ -131,20 +177,20 @@ export default function BoardingPassScanner() {
         };
         const newTripId = await insertTrip(trip);
 
-        // toast({
-        //   title: "Success",
-        //   description: "Trip added successfully",
-        //   action: (
-        //     <Link
-        //       target="_blank"
-        //       href={`https://sepolia.basescan.org/tx/${txn}`}
-        //     >
-        //       <ToastAction altText="Check it on etherscan">
-        //         <Button>Check it on Etherscan</Button>
-        //       </ToastAction>
-        //     </Link>
-        //   ),
-        // });
+        // Show success toast with option to share
+        toast({
+          title: "✅ Trip Added Successfully!",
+          description: `Flight ${flightNumber} logged. Want to share your achievement?`,
+          action: farcasterUser?.fid ? (
+            <button
+              onClick={() => shareTripToFarcaster(trip)}
+              className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+            >
+              Share on Farcaster
+            </button>
+          ) : undefined,
+        });
+
         setIsLoading(false);
       } else if (lifeCycleRes.statusName === "error") {
         toast({
@@ -215,20 +261,70 @@ export default function BoardingPassScanner() {
 
   const fetchRank = async () => {
     try {
-      const data = await getUserRank(userAddress as string)
-      if (!data) return
-      setUserRank(data)
+      const data = await getUserRank(userAddress as string);
+      if (!data) return;
+      setUserRank(data);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
+
+  // Fetch Farcaster user context
+  const fetchFarcasterContext = async () => {
+    try {
+      const context = await sdk.context;
+      if (context?.user) {
+        setFarcasterUser({
+          fid: context.user.fid,
+          username: context.user.username,
+          displayName: context.user.displayName,
+          pfpUrl: context.user.pfpUrl,
+        });
+      }
+    } catch (error) {
+      console.log("Not running in Farcaster context:", error);
+      // Set default fallback data when not in Farcaster
+      setFarcasterUser({
+        displayName: "Anonymous User",
+        username: "user",
+      });
+    }
+  };
+
+  // Share trip to Farcaster
+  const shareTripToFarcaster = async (trip: TripInput) => {
+    try {
+      const shareText = `🛫 Just logged my flight from ${trip.departureAirport} to ${trip.arrivalAirport} on HighMiles! 
+      
+Flight: ${trip.flightNumber}
+Miles Earned: ${trip.miles} HighMiles ✈️
+
+Building my million-miler status on the blockchain! #HighMiles #Aviation`;
+
+      await sdk.actions.composeCast({
+        text: shareText,
+      });
+    } catch (error) {
+      console.log("Could not share to Farcaster:", error);
+    }
+  };
 
   useEffect(() => {
     userTrips.refetch();
-
     fetchRank();
-  }, [txnHash, userAddress])
+  }, [txnHash, userAddress]);
 
+  useEffect(() => {
+    fetchFarcasterContext();
+    // Call ready when component mounts to hide splash screen if in Farcaster
+    if (typeof window !== 'undefined') {
+      try {
+        sdk.actions.ready();
+      } catch (error) {
+        console.log("Not in Farcaster mini app context");
+      }
+    }
+  }, []);
 
   return (
     <main className="mx-auto w-full font-sans">
@@ -250,14 +346,7 @@ export default function BoardingPassScanner() {
         <div className="bg-light-gray text-white min-h-screen max-w-md w-full overflow-hidden mx-auto flex flex-col">
           <div className="bg-dark-blue flex-1 flex flex-col">
             <div className="bg-primary-blue rounded-br-[100px] overflow-hidden p-6 pb-14 min-h-full flex-1 flex flex-col">
-              <div className="flex items-center mb-7 ">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mr-3">
-                  <RxAvatar className="text-blue-600 h-10 w-10 mx-auto my-auto" />
-              </div>
-                <div>
-                  <WalletConnection />
-                </div>
-              </div>
+              <UserProfile farcasterUser={farcasterUser} />
               <div className="flex flex-col justify-center items-start gap-1 flex-1">
                 <div className=" text-white text-xl md:text-[40px] italic font-[900]">
                   HIGHMILES
@@ -278,7 +367,7 @@ export default function BoardingPassScanner() {
                 {userRank?.rank?.toString() || "0"}/{userRank?.totalPlayers?.toString() || "0"}
               </p>
             </div>
-            <Image
+            <img
               src="/svg/waiting.svg"
               width={180}
               height={180}
@@ -294,7 +383,7 @@ export default function BoardingPassScanner() {
               <p className="text-primary-blue text-xl md:text-3xl font-semibold">
                 Scan Boarding Pass
               </p>
-              <Image src="/svg/stamp.svg" width={60} height={70} alt="Stamp" />
+              <img src="/svg/stamp.svg" width={60} height={70} alt="Stamp" />
             </button>
 
             {!userTrips?.isLoading && !!userTrips.data?.trips?.length && <div>

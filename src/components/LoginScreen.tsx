@@ -1,8 +1,8 @@
-import Image from 'next/image'
-import React from 'react'
-import WalletConnection from './WalletConnection'
-import Marquee from './ui/marquee'
-import { cn } from '@/lib/utils'
+import Image from 'next/image';
+import React from 'react';
+import WalletConnection from './WalletConnection';
+import Marquee from './ui/marquee';
+import { cn } from '@/lib/utils';
 
 const LoginScreen = () => {
     return (
@@ -11,20 +11,20 @@ const LoginScreen = () => {
             "h-[100dvh] flex flex-col justify-center"
         )}>
             <div className="relative h-80 w-full">
-                <Image
+                <img
                     src="/images/bg.png"
                     alt="Retro airline advertisement"
                     layout="fill"
                     objectFit="cover"
                 />
-                <Image
+                <img
                     src="/svg/logo.svg"
                     width={134}
                     height={100}
                     alt="Logo"
                     className="absolute top-10 left-1/2 -translate-x-1/2"
                 />
-                <Image
+                <img
                     src="/svg/stamp.svg"
                     width={164}
                     height={190}
@@ -70,7 +70,7 @@ const LoginScreen = () => {
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default LoginScreen
+export default LoginScreen;
