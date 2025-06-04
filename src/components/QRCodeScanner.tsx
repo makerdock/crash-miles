@@ -88,7 +88,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     return getAddTripContract({} as any);
   };
 
-  const addTripContracts = setupAddTripContracts()
+  const addTripContracts = setupAddTripContracts();
 
   return (
     <div className="mx-auto w-full">
@@ -110,7 +110,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
                   <p className="text-primary-blue text-3xl font-semibold">
                     Scan Boarding Pass
                   </p>
-                  <Image src="/svg/stamp.svg" width={60} height={70} alt="Stamp" />
+                  <img src="/svg/stamp.svg" width={60} height={70} alt="Stamp" />
                 </div>
 
                 {!boardingPassData && (

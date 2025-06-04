@@ -29,7 +29,7 @@ export default function AwaitingConnection() {
           <br />
           MILES
         </h2>
-        <Image src="/svg/waiting.svg" width={180} height={180} alt="waiting" />
+        <img src="/svg/waiting.svg" width={180} height={180} alt="waiting" />
         <p className="text-xl font-semibold mb-16 font-gravity">
           Awaiting wallet
           <br />
