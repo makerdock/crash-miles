@@ -9,9 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@farcaster/frame-sdk": "^0.4.7",
-    "@farcaster/frame-wagmi-connector": "^0.4.7",
     "@coinbase/onchainkit": "^0.33.6",
+    "@farcaster/frame-sdk": "^0.0.55",
+    "@farcaster/frame-wagmi-connector": "^0.0.44",
     "@prisma/client": "5.21.1",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
