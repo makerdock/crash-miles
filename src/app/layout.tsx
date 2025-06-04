@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-import "@coinbase/onchainkit/styles.css";
-import "@rainbow-me/rainbowkit/styles.css";
 import "../globals.css";
 
-import ConnectWalletPopup from "@/components/ConnectWalletPopup";
 import { Toaster } from "@/components/ui/toaster";
 import { GeistSans } from "geist/font/sans";
 // import OnchainProviders from "./providers";
@@ -39,7 +36,6 @@ export default function RootLayout({
             {children}
             <Toaster />
           </div>
-          <ConnectWalletPopup />
         </OnchainProviders>
         <div className="fixed top-0 left-0 md:h-[100dvh] w-full bg-white z-50 flex flex-col justify-center px-4 h-0 overflow-hidden">
           <h1 className="text-4xl text-center font-gravity italic max-w-lg mx-auto uppercase">

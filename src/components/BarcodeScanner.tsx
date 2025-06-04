@@ -12,7 +12,6 @@ import { CONTRACT_ABI } from "@/lib/contractABI";
 import { CONTRACT_ADDRESS } from "@/lib/contractInteraction";
 import { formatDate } from "@/lib/formatDate";
 import { generateZKProof, verifyZKProof } from "@/lib/zkProofs";
-import { Avatar } from "@coinbase/onchainkit/identity";
 import { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { Trip } from "@prisma/client";
 import { ethers } from "ethers";
@@ -252,15 +251,9 @@ export default function BoardingPassScanner() {
           <div className="bg-dark-blue flex-1 flex flex-col">
             <div className="bg-primary-blue rounded-br-[100px] overflow-hidden p-6 pb-14 min-h-full flex-1 flex flex-col">
               <div className="flex items-center mb-7 ">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mr-3">
-                  <Avatar
-                    address={userAddress}
-                    defaultComponent={
-                      <RxAvatar className="text-blue-600 h-10 w-10 mx-auto my-auto" />
-                    }
-                    className="h-10 w-10 text-blue-600"
-                  />
-                </div>
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mr-3">
+                  <RxAvatar className="text-blue-600 h-10 w-10 mx-auto my-auto" />
+              </div>
                 <div>
                   <WalletConnection />
                 </div>

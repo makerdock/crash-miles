@@ -1,0 +1,10 @@
+{
+  "frame": {
+    "version": "1",
+    "name": "High Miles",
+    "iconUrl": "https://example.com/favicon.ico",
+    "homeUrl": "https://example.com/",
+    "imageUrl": "https://example.com/opengraph-image",
+    "buttonTitle": "Open App"
+  }
+}
